@@ -32,7 +32,7 @@ export async function POST(req: Request) {
     ${tasks.map((task) => `- ${task.title}${task.description ? `: ${task.description}` : ""}`).join("\n")}`;
 
 		const completion = await openai.chat.completions.create({
-			model: "gpt-3.5-turbo",
+			model: "gpt-4o-mini",
 			messages: [
 				{
 					role: "system",

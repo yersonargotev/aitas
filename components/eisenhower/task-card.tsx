@@ -4,6 +4,8 @@ import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 import { useDraggable } from "@dnd-kit/core"
 import { CSS } from "@dnd-kit/utilities"
+import { AnimatePresence, motion } from "framer-motion"
+import { useState } from "react"
 
 interface TaskCardProps {
     id: string
@@ -35,6 +37,7 @@ export function TaskCard({
     onDelete,
     className,
 }: TaskCardProps) {
+    const [isHovered, setIsHovered] = useState(false)
     const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
         id,
         data: {
@@ -50,56 +53,95 @@ export function TaskCard({
     }
 
     return (
-        <Card
-            ref={setNodeRef}
-            style={style}
-            className={cn(
-                "w-full transition-all hover:shadow-md",
-                {
-                    "ring-2 ring-primary": isDragging,
-                    "cursor-grabbing": isDragging,
-                },
-                className
-            )}
-            {...attributes}
-            {...listeners}
+        <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.2 }}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
         >
-            <CardHeader className="space-y-1">
-                <div className="flex items-start justify-between">
-                    <h3 className="font-semibold leading-none tracking-tight">{title}</h3>
-                    <Badge variant="secondary" className={priorityColors[priority]}>
-                        {priority}
-                    </Badge>
-                </div>
-            </CardHeader>
-            <CardContent>
-                {description && (
-                    <p className="text-sm text-muted-foreground">{description}</p>
+            <Card
+                ref={setNodeRef}
+                style={style}
+                className={cn(
+                    "w-full transition-all",
+                    {
+                        "ring-2 ring-primary ring-offset-2": isDragging,
+                        "cursor-grabbing": isDragging,
+                        "shadow-lg": isHovered,
+                    },
+                    className
                 )}
-                {dueDate && (
-                    <p className="mt-2 text-xs text-muted-foreground">
-                        Due: {dueDate.toLocaleDateString()}
-                    </p>
-                )}
-            </CardContent>
-            <CardFooter className="flex justify-end gap-2">
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={onEdit}
-                    aria-label="Edit task"
-                >
-                    Edit
-                </Button>
-                <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={onDelete}
-                    aria-label="Delete task"
-                >
-                    Delete
-                </Button>
-            </CardFooter>
-        </Card>
+                onMouseEnter={() => setIsHovered(true)}
+                onMouseLeave={() => setIsHovered(false)}
+                {...attributes}
+                {...listeners}
+            >
+                <CardHeader className="space-y-1">
+                    <div className="flex items-start justify-between">
+                        <motion.h3
+                            className="font-semibold leading-none tracking-tight"
+                            layout
+                        >
+                            {title}
+                        </motion.h3>
+                        <Badge
+                            variant="secondary"
+                            className={cn(
+                                priorityColors[priority],
+                                "transition-colors duration-200"
+                            )}
+                        >
+                            {priority}
+                        </Badge>
+                    </div>
+                </CardHeader>
+                <CardContent>
+                    <AnimatePresence mode="wait">
+                        {description && (
+                            <motion.p
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: "auto" }}
+                                exit={{ opacity: 0, height: 0 }}
+                                className="text-sm text-muted-foreground"
+                            >
+                                {description}
+                            </motion.p>
+                        )}
+                    </AnimatePresence>
+                    {dueDate && (
+                        <motion.p
+                            className="mt-2 text-xs text-muted-foreground"
+                            layout
+                        >
+                            Due: {dueDate.toLocaleDateString()}
+                        </motion.p>
+                    )}
+                </CardContent>
+                <CardFooter className="flex justify-end gap-2">
+                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={onEdit}
+                            aria-label="Edit task"
+                        >
+                            Edit
+                        </Button>
+                    </motion.div>
+                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                        <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={onDelete}
+                            aria-label="Delete task"
+                        >
+                            Delete
+                        </Button>
+                    </motion.div>
+                </CardFooter>
+            </Card>
+        </motion.div>
     )
 } 

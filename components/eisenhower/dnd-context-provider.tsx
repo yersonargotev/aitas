@@ -2,6 +2,7 @@ import {
     DndContext,
     type DragEndEvent,
     type DragOverEvent,
+    DragOverlay,
     type DragStartEvent,
     MouseSensor,
     TouchSensor,
@@ -9,6 +10,8 @@ import {
     useSensors,
 } from "@dnd-kit/core";
 import { restrictToWindowEdges } from "@dnd-kit/modifiers";
+import { useState } from "react";
+import { TaskCard } from "./task-card";
 
 interface DndContextProviderProps {
     children: React.ReactNode;
@@ -23,6 +26,14 @@ export function DndContextProvider({
     onDragOver,
     onDragStart,
 }: DndContextProviderProps) {
+    const [activeTask, setActiveTask] = useState<{
+        id: string;
+        title: string;
+        description?: string;
+        priority: "urgent" | "important" | "delegate" | "eliminate" | "unclassified";
+        dueDate?: Date;
+    } | null>(null);
+
     const mouseSensor = useSensor(MouseSensor, {
         activationConstraint: {
             distance: 10, // Minimum distance before activation
@@ -38,15 +49,42 @@ export function DndContextProvider({
 
     const sensors = useSensors(mouseSensor, touchSensor);
 
+    const handleDragStart = (event: DragStartEvent) => {
+        const { active } = event;
+        const taskData = active.data.current?.task;
+
+        if (taskData) {
+            setActiveTask(taskData);
+        }
+
+        onDragStart?.(event);
+    };
+
+    const handleDragEnd = (event: DragEndEvent) => {
+        setActiveTask(null);
+        onDragEnd(event);
+    };
+
     return (
         <DndContext
             sensors={sensors}
             modifiers={[restrictToWindowEdges]}
-            onDragEnd={onDragEnd}
+            onDragEnd={handleDragEnd}
             onDragOver={onDragOver}
-            onDragStart={onDragStart}
+            onDragStart={handleDragStart}
         >
             {children}
+            <DragOverlay>
+                {activeTask && (
+                    <div className="transform scale-105 rotate-3">
+                        <TaskCard
+                            {...activeTask}
+                            className="shadow-xl"
+                            isDragging
+                        />
+                    </div>
+                )}
+            </DragOverlay>
         </DndContext>
     );
 }
