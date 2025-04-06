@@ -19,10 +19,8 @@ import type { TaskPriority } from "@/lib/stores/types";
 import type {
     DragEndEvent,
     DragOverEvent,
-    DragStartEvent,
 } from "@dnd-kit/core";
 import { CheckCircle2 } from "lucide-react";
-import { useState } from "react";
 
 interface Task {
     id: string;
@@ -46,12 +44,6 @@ export function Matrix() {
         setFilter,
     } = useTaskStore();
 
-    const [activeId, setActiveId] = useState<string | null>(null);
-    const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
-
-    const handleDragStart = (event: DragStartEvent) => {
-        setActiveId(event.active.id as string);
-    };
 
     const handleDragOver = (event: DragOverEvent) => {
         const { active, over } = event;
@@ -66,10 +58,6 @@ export function Matrix() {
         moveTask(activeTask.id, overId as TaskPriority);
     };
 
-    const handleDragEnd = (event: DragEndEvent) => {
-        setActiveId(null);
-    };
-
     const handleTaskCreate = (task: Omit<Task, "id">) => {
         addTask(task);
     };
@@ -78,10 +66,6 @@ export function Matrix() {
         if (updates) {
             // If updates are provided, update the task
             updateTask(taskId, updates);
-            setEditingTaskId(null);
-        } else {
-            // Otherwise, set the task as being edited
-            setEditingTaskId(taskId);
         }
     };
 
@@ -127,6 +111,10 @@ export function Matrix() {
         ),
     };
 
+    const handleDragEnd = (event: DragEndEvent) => {
+        // No need to clear activeId state
+    };
+
     return (
         <div className="space-y-6">
             <div className="flex gap-2">
@@ -147,7 +135,6 @@ export function Matrix() {
             </div>
 
             <DndContextProvider
-                onDragStart={handleDragStart}
                 onDragOver={handleDragOver}
                 onDragEnd={handleDragEnd}
             >
