@@ -2,8 +2,11 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
+import { useDraggable } from "@dnd-kit/core"
+import { CSS } from "@dnd-kit/utilities"
 
 interface TaskCardProps {
+    id: string
     title: string
     description?: string
     priority: "urgent" | "important" | "delegate" | "eliminate"
@@ -11,6 +14,7 @@ interface TaskCardProps {
     onEdit?: () => void
     onDelete?: () => void
     className?: string
+    isDragging?: boolean
 }
 
 const priorityColors = {
@@ -21,16 +25,44 @@ const priorityColors = {
 }
 
 export function TaskCard({
+    id,
     title,
     description,
     priority,
     dueDate,
     onEdit,
     onDelete,
-    className
+    className,
 }: TaskCardProps) {
+    const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+        id,
+        data: {
+            type: 'task',
+            task: { id, title, description, priority, dueDate }
+        }
+    })
+
+    const style = {
+        transform: CSS.Translate.toString(transform),
+        opacity: isDragging ? 0.5 : undefined,
+        cursor: 'grab'
+    }
+
     return (
-        <Card className={cn("w-full transition-all hover:shadow-md", className)}>
+        <Card
+            ref={setNodeRef}
+            style={style}
+            className={cn(
+                "w-full transition-all hover:shadow-md",
+                {
+                    "ring-2 ring-primary": isDragging,
+                    "cursor-grabbing": isDragging,
+                },
+                className
+            )}
+            {...attributes}
+            {...listeners}
+        >
             <CardHeader className="space-y-1">
                 <div className="flex items-start justify-between">
                     <h3 className="font-semibold leading-none tracking-tight">{title}</h3>
