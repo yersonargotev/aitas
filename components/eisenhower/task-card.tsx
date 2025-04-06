@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { useDraggable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import { AnimatePresence, motion } from "framer-motion";
+import { Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
 
 interface TaskCardProps {
@@ -118,54 +119,59 @@ export function TaskCard({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.2 }}
+            className="w-full"
         >
             <Card
                 ref={setNodeRef}
                 style={style}
                 {...(isEditing ? {} : { ...attributes, ...listeners })}
                 className={cn(
-                    "relative group transition-all duration-200",
+                    "relative group transition-all duration-200 hover:shadow-md",
                     {
                         "opacity-50": completed,
                         "border-green-200 dark:border-green-800": completed,
+                        "ring-1 ring-primary/10": isHovered && !isEditing,
                     },
                     className,
                 )}
                 onMouseEnter={() => setIsHovered(true)}
                 onMouseLeave={() => setIsHovered(false)}
             >
-                <CardHeader className="pb-2">
-                    <div className="flex items-start justify-between gap-2">
-                        <div className="flex items-center gap-2 w-full">
+                <CardHeader className="pb-2 space-y-2">
+                    <div className="flex flex-col items-start justify-between gap-2 relative pr-16 sm:pr-2">
+                        <Badge
+                            variant="secondary"
+                            className={cn("shrink-0 whitespace-nowrap", priorityColors[priority])}
+                        >
+                            {priorityLabels[priority]}
+                        </Badge>
+                        <div className="flex items-start sm:items-center gap-2 w-full min-w-0">
                             <Checkbox
                                 checked={completed}
                                 onCheckedChange={onToggleComplete}
-                                className="mt-1"
+                                className="mt-1.5 sm:mt-0 shrink-0"
                             />
                             {isEditing ? (
                                 <Input
                                     value={editedTitle}
                                     onChange={(e) => setEditedTitle(e.target.value)}
                                     onKeyDown={handleKeyDown}
-                                    className="font-semibold"
+                                    className="font-semibold min-w-[200px]"
                                     autoFocus
                                 />
                             ) : (
-                                <h3
-                                    className={cn("font-semibold leading-none tracking-tight", {
-                                        "line-through text-muted-foreground": completed,
-                                    })}
-                                >
-                                    {title}
-                                </h3>
+                                <div className="min-w-0 flex-1">
+                                    <h3
+                                        className={cn("font-semibold leading-normal tracking-tight truncate", {
+                                            "line-through text-muted-foreground": completed,
+                                        })}
+                                    >
+                                        {title}
+                                    </h3>
+                                </div>
                             )}
                         </div>
-                        <Badge
-                            variant="secondary"
-                            className={cn("ml-auto", priorityColors[priority])}
-                        >
-                            {priorityLabels[priority]}
-                        </Badge>
+
                     </div>
                 </CardHeader>
                 {isEditing ? (
@@ -198,9 +204,12 @@ export function TaskCard({
                         {description && (
                             <CardContent className="pb-2">
                                 <p
-                                    className={cn("text-sm text-muted-foreground", {
-                                        "line-through": completed,
-                                    })}
+                                    className={cn(
+                                        "text-sm text-muted-foreground line-clamp-3 break-words",
+                                        {
+                                            "line-through": completed,
+                                        }
+                                    )}
                                 >
                                     {description}
                                 </p>
@@ -209,7 +218,7 @@ export function TaskCard({
                         {dueDate && (
                             <CardContent className="pb-2">
                                 <p className="text-xs text-muted-foreground">
-                                    Vence: {new Date(dueDate).toLocaleDateString()}
+                                    Due: {new Date(dueDate).toLocaleDateString()}
                                 </p>
                             </CardContent>
                         )}
@@ -217,7 +226,14 @@ export function TaskCard({
                 )}
                 <AnimatePresence>
                     {isHovered && !isEditing && (
-                        <CardFooter className="absolute right-2 top-2 flex gap-1">
+                        <div
+                            className={cn(
+                                "absolute top-2 flex gap-1",
+                                "right-2 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-200",
+                                "bg-gradient-to-l from-background via-background to-transparent sm:bg-none",
+                                "pl-4 pr-0.5 py-0.5 -mr-0.5 sm:p-0"
+                            )}
+                        >
                             <motion.div
                                 initial={{ opacity: 0, scale: 0.8 }}
                                 animate={{ opacity: 1, scale: 1 }}
@@ -228,23 +244,10 @@ export function TaskCard({
                                     variant="ghost"
                                     size="icon"
                                     onClick={handleEditClick}
-                                    className="h-8 w-8"
+                                    className="h-7 w-7 rounded-full"
                                     aria-label="Edit task"
                                 >
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth="2"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        className="h-4 w-4"
-                                        aria-hidden="true"
-                                    >
-                                        <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
-                                        <path d="m15 5 4 4" />
-                                    </svg>
+                                    <Pencil className="h-3.5 w-3.5" />
                                 </Button>
                             </motion.div>
                             <motion.div
@@ -257,27 +260,13 @@ export function TaskCard({
                                     variant="ghost"
                                     size="icon"
                                     onClick={onDelete}
-                                    className="h-8 w-8 text-destructive hover:text-destructive"
+                                    className="h-7 w-7 rounded-full text-destructive hover:text-destructive hover:bg-destructive/10"
                                     aria-label="Delete task"
                                 >
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth="2"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        className="h-4 w-4"
-                                        aria-hidden="true"
-                                    >
-                                        <path d="M3 6h18" />
-                                        <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
-                                        <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-                                    </svg>
+                                    <Trash2 className="h-3.5 w-3.5" />
                                 </Button>
                             </motion.div>
-                        </CardFooter>
+                        </div>
                     )}
                 </AnimatePresence>
             </Card>
