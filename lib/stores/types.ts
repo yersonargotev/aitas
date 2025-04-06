@@ -44,6 +44,7 @@ export interface TaskActions {
 
 	// Task movement and status
 	moveTask: (taskId: string, newPriority: TaskPriority) => void;
+	reorderTasks: (taskId: string, overTaskId: string) => void;
 	toggleTaskCompletion: (taskId: string) => void;
 
 	// Task selection for AI ordering

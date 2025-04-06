@@ -22,7 +22,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import type { TaskPriority } from "@/lib/stores/types";
 import { cn } from "@/lib/utils";
-import { useDraggable } from "@dnd-kit/core";
+import { useDraggable, useDroppable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import { AnimatePresence, motion } from "framer-motion";
 import { Pencil, Trash2 } from "lucide-react";
@@ -77,7 +77,7 @@ export function TaskCard({
     const [editedTitle, setEditedTitle] = useState(title);
     const [editedDescription, setEditedDescription] = useState(description || "");
 
-    const { attributes, listeners, setNodeRef, transform, isDragging } =
+    const { attributes, listeners, setNodeRef: setDraggableRef, transform, isDragging } =
         useDraggable({
             id,
             data: {
@@ -85,6 +85,19 @@ export function TaskCard({
                 task: { id, title, description, priority, dueDate, completed },
             },
         });
+
+    const { setNodeRef: setDroppableRef, isOver } = useDroppable({
+        id,
+        data: {
+            type: "task",
+            task: { id, title, description, priority, dueDate, completed },
+        },
+    });
+
+    const setNodeRef = (node: HTMLElement | null) => {
+        setDraggableRef(node);
+        setDroppableRef(node);
+    };
 
     const style = {
         transform: CSS.Translate.toString(transform),
@@ -142,6 +155,8 @@ export function TaskCard({
                         "opacity-50": completed,
                         "border-green-200 dark:border-green-800": completed,
                         "ring-1 ring-primary/10": isHovered && !isEditing,
+                        "ring-2 ring-primary ring-offset-2": isOver,
+                        "bg-primary/5": isOver,
                     },
                     className,
                 )}

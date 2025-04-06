@@ -43,6 +43,7 @@ export function Matrix() {
         moveTask,
         toggleTaskCompletion,
         setFilter,
+        reorderTasks,
     } = useTaskStore();
 
 
@@ -54,9 +55,20 @@ export function Matrix() {
         if (!activeTask) return;
 
         const overId = over.id as string;
-        if (activeTask.priority === overId) return;
 
-        moveTask(activeTask.id, overId as TaskPriority);
+        // If dropping on another task, handle reordering
+        if (over.data.current?.type === "task") {
+            const overTask = tasks.find((task) => task.id === over.id);
+            if (overTask && activeTask.priority === overTask.priority) {
+                reorderTasks(activeTask.id, overTask.id);
+                return;
+            }
+        }
+
+        // If dropping on a zone, handle moving between priorities
+        if (activeTask.priority !== overId) {
+            moveTask(activeTask.id, overId as TaskPriority);
+        }
     };
 
     const handleTaskCreate = (task: Omit<Task, "id">) => {
@@ -110,7 +122,18 @@ export function Matrix() {
     };
 
     const handleDragEnd = (event: DragEndEvent) => {
-        // No need to clear activeId state
+        const { active, over } = event;
+        if (!over) return;
+
+        // Handle reordering if dropping on another task
+        if (over.data.current?.type === "task") {
+            const activeTask = tasks.find((task) => task.id === active.id);
+            const overTask = tasks.find((task) => task.id === over.id);
+
+            if (activeTask && overTask && activeTask.priority === overTask.priority) {
+                reorderTasks(activeTask.id, overTask.id);
+            }
+        }
     };
 
     return (

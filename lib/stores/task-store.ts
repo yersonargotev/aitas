@@ -149,6 +149,39 @@ export const useTaskStore = create<TaskState & TaskActions>()(
 				}
 			},
 
+			reorderTasks: (taskId, overTaskId) => {
+				try {
+					set((state) => {
+						const taskIndex = state.tasks.findIndex(
+							(task) => task.id === taskId,
+						);
+						const overTaskIndex = state.tasks.findIndex(
+							(task) => task.id === overTaskId,
+						);
+
+						if (taskIndex === -1 || overTaskIndex === -1) return state;
+
+						const task = state.tasks[taskIndex];
+						const overTask = state.tasks[overTaskIndex];
+
+						// Only reorder if tasks are in the same priority
+						if (task.priority !== overTask.priority) return state;
+
+						const updatedTasks = [...state.tasks];
+						updatedTasks.splice(taskIndex, 1);
+						updatedTasks.splice(overTaskIndex, 0, task);
+
+						return {
+							tasks: updatedTasks,
+							statistics: calculateStatistics(updatedTasks),
+							error: null,
+						};
+					});
+				} catch (error) {
+					set({ error: "Error reordering tasks" });
+				}
+			},
+
 			toggleTaskCompletion: (taskId) => {
 				try {
 					set((state) => {
