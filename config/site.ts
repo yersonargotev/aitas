@@ -1,11 +1,11 @@
 export const siteConfig = {
 	name: "Task Manager",
-	url: "https://tasks-ai.vercel.app",
-	ogImage: "https://tasks-ai.vercel.app/og.jpg",
+	url: "https://aitas.vercel.app",
+	ogImage: "https://aitas.vercel.app/og.jpg",
 	description: "A task manager that uses AI to help you get things done.",
 	links: {
 		twitter: "https://twitter.com/yersonargotev",
-		github: "https://github.com/yersonargotev/tasks-ai",
+		github: "https://github.com/yersonargotev/aitas",
 	},
 };
 

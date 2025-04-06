@@ -7,7 +7,7 @@ export function Footer() {
                 <div className="flex flex-col items-center justify-center gap-4 text-center text-sm text-muted-foreground">
                     <p>© {new Date().getFullYear()} Task Manager. {" "}
                         <span>
-                            Developed by <Link href="https://github.com/yargote69" target="_blank" rel="noopener noreferrer" className="hover:text-primary underline-offset-2 underline">me</Link>
+                            Developed by <Link href="https://github.com/yesonargotev" target="_blank" rel="noopener noreferrer" className="hover:text-primary underline-offset-2 underline">me</Link>
                         </span>
                     </p>
                 </div>
