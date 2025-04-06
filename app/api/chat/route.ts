@@ -10,8 +10,8 @@ export async function POST(req: Request) {
 		const body = await req.json();
 		console.log("Received request body:", body);
 
-		// Extract tasks from the request body
-		const { tasks } = body;
+		// Extract tasks and goal from the request body
+		const { tasks, goal } = body;
 
 		if (!Array.isArray(tasks)) {
 			console.error("Invalid request: tasks is not an array", tasks);
@@ -30,11 +30,15 @@ export async function POST(req: Request) {
 		}
 
 		// Format the prompt for the AI
-		const prompt = `Classify the following tasks into the Eisenhower Matrix quadrants (urgent, important, delegate, eliminate). 
-    Consider urgency based on time sensitivity and importance based on impact and alignment with goals.
-    
-    Tasks:
-    ${tasks.map((task) => `- ${task.id}: ${task.title}${task.description ? `: ${task.description}` : ""}`).join("\n")}`;
+		let prompt = `Classify the following tasks into the Eisenhower Matrix quadrants (urgent, important, delegate, eliminate). 
+    Consider urgency based on time sensitivity and importance based on impact and alignment with goals.`;
+
+		// Add goal to the prompt if provided
+		if (goal && goal.trim() !== "") {
+			prompt += `\n\nGoal: ${goal}\n\nConsider how each task aligns with this goal when determining importance.`;
+		}
+
+		prompt += `\n\nTasks:\n${tasks.map((task) => `- ${task.id}: ${task.title}${task.description ? `: ${task.description}` : ""}`).join("\n")}`;
 
 		console.log("Sending prompt to AI:", prompt);
 

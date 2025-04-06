@@ -1,6 +1,7 @@
 "use client";
 
 import { ActionButton } from "@/components/eisenhower/action-button";
+import { GoalInput } from "@/components/eisenhower/goal-input";
 import { useTaskStore } from "@/lib/stores/task-store";
 import type { TaskPriority } from "@/lib/stores/types";
 import { Loader2, Sparkle } from "lucide-react";
@@ -10,6 +11,7 @@ import { toast } from "sonner";
 export function AIClassifyButton() {
     const { tasks, moveTask, setError, clearError } = useTaskStore();
     const [isClassifying, setIsClassifying] = useState(false);
+    const [goal, setGoal] = useState("");
 
     // Get unclassified tasks
     const unclassifiedTasks = tasks.filter(task => task.priority === "unclassified");
@@ -38,7 +40,10 @@ export function AIClassifyButton() {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ tasks: tasksToClassify }),
+                body: JSON.stringify({
+                    tasks: tasksToClassify,
+                    goal: goal
+                }),
             });
 
             if (!response.ok) {
@@ -74,14 +79,20 @@ export function AIClassifyButton() {
     };
 
     return (
-        <ActionButton
-            onClick={handleClassify}
-            disabled={isClassifying || unclassifiedTasks.length === 0}
-            className="flex items-center gap-2"
-        >
-            <Sparkle className="h-4 w-4 animate-pulse transition-all duration-300" />
-            {isClassifying && <Loader2 className="h-4 w-4 animate-spin" />}
-            {isClassifying ? "Classifying..." : "Classify Tasks"}
-        </ActionButton>
+        <div className="flex items-center gap-2">
+            <ActionButton
+                onClick={handleClassify}
+                disabled={isClassifying || unclassifiedTasks.length === 0}
+                className="flex items-center gap-2"
+            >
+                <Sparkle className="h-4 w-4 animate-pulse transition-all duration-300" />
+                {isClassifying && <Loader2 className="h-4 w-4 animate-spin" />}
+                {isClassifying ? "Classifying..." : "Classify Tasks"}
+            </ActionButton>
+            <GoalInput
+                onGoalChange={setGoal}
+                className="w-64"
+            />
+        </div>
     );
 } 
