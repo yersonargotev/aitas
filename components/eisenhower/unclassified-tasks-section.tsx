@@ -35,13 +35,13 @@ export function UnclassifiedTasksSection({
                 </div>
             </CardHeader>
             <DroppableZone id="unclassified" className="p-4 min-h-[100px]">
-                <div className="flex flex-col gap-3">
-                    {unclassifiedTasks.length === 0 ? (
-                        <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
-                            Drop tasks here
-                        </div>
-                    ) : (
-                        unclassifiedTasks.map((task) => (
+                {unclassifiedTasks.length === 0 ? (
+                    <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
+                        Drop tasks here
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                        {unclassifiedTasks.map((task) => (
                             <TaskCard
                                 key={task.id}
                                 {...task}
@@ -49,9 +49,9 @@ export function UnclassifiedTasksSection({
                                 onDelete={() => onDelete(task.id)}
                                 onToggleComplete={() => onToggleComplete(task.id)}
                             />
-                        ))
-                    )}
-                </div>
+                        ))}
+                    </div>
+                )}
             </DroppableZone>
         </Card>
     );
