@@ -9,15 +9,7 @@ export function Header() {
                     Eisenhower Tasks
                 </Link>
 
-                <nav className="flex items-center gap-6">
-                    <Link href="/tasks" className="text-sm hover:text-primary">
-                        Mis Tareas
-                    </Link>
-                    <Link href="/about" className="text-sm hover:text-primary">
-                        Acerca de
-                    </Link>
-                    <ThemeToggle />
-                </nav>
+                <ThemeToggle />
             </div>
         </header>
     );

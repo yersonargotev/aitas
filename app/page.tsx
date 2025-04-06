@@ -31,8 +31,8 @@ export default function Home() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <h1 className="text-2xl font-bold mb-2">Cargando...</h1>
-          <p className="text-muted-foreground">Preparando tu matriz de Eisenhower</p>
+          <h1 className="text-2xl font-bold mb-2">Loading...</h1>
+          <p className="text-muted-foreground">Preparing your Eisenhower Matrix</p>
         </div>
       </div>
     )
@@ -41,10 +41,10 @@ export default function Home() {
   return (
     <div className="space-y-8">
       <div className="text-center space-y-4">
-        <h1 className="text-4xl font-bold">Matriz de Eisenhower</h1>
+        <h1 className="text-4xl font-bold">Eisenhower Matrix</h1>
         <p className="text-muted-foreground max-w-2xl mx-auto">
-          Organiza tus tareas según su urgencia e importancia utilizando la matriz de Eisenhower.
-          Prioriza lo que realmente importa y toma mejores decisiones sobre tu tiempo.
+          Organize your tasks based on their urgency and importance using the Eisenhower Matrix.
+          Prioritize what really matters and make better decisions about your time.
         </p>
       </div>
 
