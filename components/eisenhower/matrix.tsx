@@ -151,15 +151,15 @@ export function Matrix() {
                 onDragOver={handleDragOver}
                 onDragEnd={handleDragEnd}
             >
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 h-full">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     {Object.entries(tasksByPriority).map(([priority, tasks]) => (
                         <DroppableZone
                             key={priority}
                             id={priority}
-                            className="min-h-[200px]"
+                            className="min-h-[200px] h-full"
                         >
-                            <div className="space-y-4 h-full">
-                                <div className="flex items-center justify-between">
+                            <div className="flex flex-col h-full">
+                                <div className="flex items-center justify-between mb-4">
                                     <h2 className="text-lg font-semibold capitalize">
                                         {priority}
                                     </h2>
@@ -167,7 +167,7 @@ export function Matrix() {
                                         {tasks.length} tasks
                                     </span>
                                 </div>
-                                <div className="space-y-2 h-full">
+                                <div className="flex-1 flex flex-col gap-3">
                                     {tasks.map((task) => (
                                         <TaskCard
                                             key={task.id}
@@ -193,7 +193,7 @@ export function Matrix() {
                             <span>Completed Tasks ({completedTasks.length})</span>
                         </AccordionTrigger>
                         <AccordionContent>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pt-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 pt-4">
                                 {Object.entries(tasksByPriority).map(([priority, _]) => {
                                     const priorityCompletedTasks = completedTasks.filter(
                                         task => task.priority === priority
@@ -202,8 +202,8 @@ export function Matrix() {
                                     if (priorityCompletedTasks.length === 0) return null;
 
                                     return (
-                                        <div key={`completed-${priority}`} className="space-y-4">
-                                            <div className="flex items-center justify-between">
+                                        <div key={`completed-${priority}`} className="flex flex-col gap-3">
+                                            <div className="flex items-center justify-between mb-2">
                                                 <h3 className="text-md font-medium capitalize">
                                                     {priority}
                                                 </h3>
@@ -211,7 +211,7 @@ export function Matrix() {
                                                     {priorityCompletedTasks.length} tasks
                                                 </span>
                                             </div>
-                                            <div className="space-y-2">
+                                            <div className="flex flex-col gap-3">
                                                 {priorityCompletedTasks.map((task) => (
                                                     <TaskCard
                                                         key={task.id}
@@ -230,8 +230,6 @@ export function Matrix() {
                     </AccordionItem>
                 </Accordion>
             )}
-
-
 
             <div className="w-full mx-auto">
                 <TaskStatistics statistics={statistics} />

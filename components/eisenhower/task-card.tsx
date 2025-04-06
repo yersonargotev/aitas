@@ -137,8 +137,8 @@ export function TaskCard({
                 onMouseEnter={() => setIsHovered(true)}
                 onMouseLeave={() => setIsHovered(false)}
             >
-                <CardHeader className="pb-2 space-y-2">
-                    <div className="flex flex-col items-start justify-between gap-2 relative pr-8 sm:pr-2">
+                <CardHeader className="px-4 py-3">
+                    <div className="flex flex-col items-start gap-2 relative pr-8 sm:pr-2">
                         <Badge
                             variant="secondary"
                             className={cn("shrink-0 whitespace-nowrap", priorityColors[priority])}
@@ -162,7 +162,7 @@ export function TaskCard({
                             ) : (
                                 <div className="min-w-0 flex-1">
                                     <h3
-                                        className={cn("font-semibold leading-normal tracking-tight truncate", {
+                                        className={cn("font-semibold leading-normal tracking-tight line-clamp-2", {
                                             "line-through text-muted-foreground": completed,
                                         })}
                                     >
