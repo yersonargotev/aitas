@@ -210,7 +210,7 @@ export function Matrix() {
                         </AccordionTrigger>
                         <AccordionContent>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 pt-4">
-                                {Object.entries(tasksByPriority).map(([priority, _]) => {
+                                {Object.entries(tasksByPriority).map(([priority]) => {
                                     const priorityCompletedTasks = completedTasks.filter(
                                         task => task.priority === priority
                                     );

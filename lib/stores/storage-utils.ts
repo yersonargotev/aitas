@@ -97,6 +97,7 @@ export function isLocalStorageAvailable(): boolean {
 		localStorage.removeItem(testKey);
 		return true;
 	} catch (e) {
+		console.error(`Error checking localStorage availability: ${e}`);
 		return false;
 	}
 }

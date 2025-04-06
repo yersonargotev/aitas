@@ -14,7 +14,6 @@ import { Button } from "@/components/ui/button";
 import {
     Card,
     CardContent,
-    CardFooter,
     CardHeader,
 } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -299,7 +298,7 @@ export function TaskCard({
                                         <AlertDialogHeader>
                                             <AlertDialogTitle>Delete Task</AlertDialogTitle>
                                             <AlertDialogDescription>
-                                                Are you sure you want to delete "{title}"? This action cannot be undone.
+                                                Are you sure you want to delete &quot;{title}&quot;? This action cannot be undone.
                                             </AlertDialogDescription>
                                         </AlertDialogHeader>
                                         <AlertDialogFooter>

@@ -3,13 +3,7 @@
 import { v4 as uuidv4 } from "uuid";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
-import type {
-	Task,
-	TaskActions,
-	TaskPriority,
-	TaskState,
-	TaskStore,
-} from "./types";
+import type { Task, TaskActions, TaskPriority, TaskState } from "./types";
 
 // Initial state
 const initialState = {
@@ -64,7 +58,7 @@ const calculateStatistics = (tasks: Task[]) => {
 // Create the store with persist middleware
 export const useTaskStore = create<TaskState & TaskActions>()(
 	persist(
-		(set, get) => ({
+		(set) => ({
 			// Initial state
 			...initialState,
 
@@ -86,6 +80,7 @@ export const useTaskStore = create<TaskState & TaskActions>()(
 						error: null,
 					}));
 				} catch (error) {
+					console.error(`Error adding task: ${error}`);
 					set({ error: "Error adding task" });
 				}
 			},
@@ -105,6 +100,7 @@ export const useTaskStore = create<TaskState & TaskActions>()(
 						};
 					});
 				} catch (error) {
+					console.error(`Error updating task: ${error}`);
 					set({ error: "Error updating task" });
 				}
 			},
@@ -125,6 +121,7 @@ export const useTaskStore = create<TaskState & TaskActions>()(
 						};
 					});
 				} catch (error) {
+					console.error(`Error deleting task: ${error}`);
 					set({ error: "Error deleting task" });
 				}
 			},
@@ -145,6 +142,7 @@ export const useTaskStore = create<TaskState & TaskActions>()(
 						};
 					});
 				} catch (error) {
+					console.error(`Error moving task: ${error}`);
 					set({ error: "Error moving task" });
 				}
 			},
@@ -178,6 +176,7 @@ export const useTaskStore = create<TaskState & TaskActions>()(
 						};
 					});
 				} catch (error) {
+					console.error(`Error reordering tasks: ${error}`);
 					set({ error: "Error reordering tasks" });
 				}
 			},
@@ -197,6 +196,7 @@ export const useTaskStore = create<TaskState & TaskActions>()(
 						};
 					});
 				} catch (error) {
+					console.error(`Error toggling task completion: ${error}`);
 					set({ error: "Error toggling task completion" });
 				}
 			},
@@ -209,6 +209,7 @@ export const useTaskStore = create<TaskState & TaskActions>()(
 						error: null,
 					}));
 				} catch (error) {
+					console.error(`Error selecting task: ${error}`);
 					set({ error: "Error selecting task" });
 				}
 			},
@@ -222,6 +223,7 @@ export const useTaskStore = create<TaskState & TaskActions>()(
 						error: null,
 					}));
 				} catch (error) {
+					console.error(`Error deselecting task: ${error}`);
 					set({ error: "Error deselecting task" });
 				}
 			},
@@ -230,6 +232,7 @@ export const useTaskStore = create<TaskState & TaskActions>()(
 				try {
 					set({ selectedTaskIds: [], error: null });
 				} catch (error) {
+					console.error(`Error clearing selected tasks: ${error}`);
 					set({ error: "Error clearing selected tasks" });
 				}
 			},
