@@ -1,9 +1,6 @@
+import { openai } from "@ai-sdk/openai";
+import { generateText } from "ai";
 import { NextResponse } from "next/server";
-import { OpenAI } from "openai";
-
-const openai = new OpenAI({
-	apiKey: process.env.OPENAI_API_KEY,
-});
 
 interface Task {
 	id: string;
@@ -31,28 +28,23 @@ export async function POST(req: Request) {
     Tasks:
     ${tasks.map((task) => `- ${task.title}${task.description ? `: ${task.description}` : ""}`).join("\n")}`;
 
-		const completion = await openai.chat.completions.create({
-			model: "gpt-4o-mini",
-			messages: [
-				{
-					role: "system",
-					content:
-						"You are a task classification expert. Analyze tasks and classify them into the Eisenhower Matrix quadrants based on their urgency and importance. Return only valid JSON with task IDs and their classifications.",
+		const { text } = await generateText({
+			model: openai("gpt-4o-mini"),
+			system:
+				"You are a task classification expert. Analyze tasks and classify them into the Eisenhower Matrix quadrants based on their urgency and importance. Return only valid JSON with task IDs and their classifications.",
+			prompt: prompt,
+			providerOptions: {
+				openai: {
+					response_format: { type: "json_object" },
 				},
-				{
-					role: "user",
-					content: prompt,
-				},
-			],
-			response_format: { type: "json_object" },
+			},
 		});
 
-		const content = completion.choices[0].message.content;
-		if (!content) {
+		if (!text) {
 			throw new Error("No content received from OpenAI");
 		}
 
-		const classifications = JSON.parse(content);
+		const classifications = JSON.parse(text);
 
 		return NextResponse.json(classifications);
 	} catch (error) {
