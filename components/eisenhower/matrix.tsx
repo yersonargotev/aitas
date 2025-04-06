@@ -3,7 +3,9 @@ import {
     DragOverEvent,
     DragStartEvent,
 } from "@dnd-kit/core";
+import { useState } from "react";
 import { ActionButton } from "./action-button";
+import { AIClassifier } from "./ai-classifier";
 import { DndContextProvider } from "./dnd-context-provider";
 import { DroppableZone } from "./droppable-zone";
 import { TaskCard } from "./task-card";
@@ -32,6 +34,8 @@ export function EisenhowerMatrix({
     onTaskDelete,
     onTaskMove,
 }: EisenhowerMatrixProps) {
+    const [showClassifier, setShowClassifier] = useState(false);
+
     const quadrants = {
         urgent: tasks.filter((task) => task.priority === "urgent"),
         important: tasks.filter((task) => task.priority === "important"),
@@ -53,6 +57,13 @@ export function EisenhowerMatrix({
         }
     };
 
+    const handleTasksClassified = (classifications: Record<string, Task["priority"]>) => {
+        for (const [taskId, priority] of Object.entries(classifications)) {
+            onTaskMove?.(taskId, priority);
+        }
+        setShowClassifier(false);
+    };
+
     return (
         <DndContextProvider onDragEnd={handleDragEnd}>
             <div className="relative w-full">
@@ -60,6 +71,26 @@ export function EisenhowerMatrix({
                 <div className="mb-4">
                     <TaskForm onSubmit={onTaskCreate} />
                 </div>
+
+                {/* AI Classifier Toggle */}
+                <div className="mb-4">
+                    <ActionButton
+                        onClick={() => setShowClassifier(!showClassifier)}
+                        variant="outline"
+                    >
+                        {showClassifier ? "Hide AI Classifier" : "Show AI Classifier"}
+                    </ActionButton>
+                </div>
+
+                {/* AI Classifier */}
+                {showClassifier && (
+                    <div className="mb-6">
+                        <AIClassifier
+                            tasks={tasks}
+                            onTasksClassified={handleTasksClassified}
+                        />
+                    </div>
+                )}
 
                 {/* Unclassified Tasks */}
                 {quadrants.unclassified.length > 0 && (
