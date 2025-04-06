@@ -32,10 +32,10 @@ import { ActionButton } from "./action-button"
 
 // Define the task schema with zod
 const taskFormSchema = z.object({
-    title: z.string().min(1, "El título es obligatorio"),
+    title: z.string().min(1, "Title is required"),
     description: z.string().optional(),
     priority: z.enum(["urgent", "important", "delegate", "eliminate", "unclassified"], {
-        required_error: "Por favor selecciona una prioridad",
+        required_error: "Please select a priority",
     }),
 })
 
@@ -103,7 +103,7 @@ export function TaskForm({ onSubmit, trigger }: TaskFormProps) {
                                 <FormItem>
                                     <FormLabel>Title</FormLabel>
                                     <FormControl>
-                                        <Input placeholder="Título de la tarea" {...field} />
+                                        <Input placeholder="Task title" {...field} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
