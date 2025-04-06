@@ -89,9 +89,9 @@ export function TaskForm({ onSubmit, trigger }: TaskFormProps) {
             </DialogTrigger>
             <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
-                    <DialogTitle>Nueva Tarea</DialogTitle>
+                    <DialogTitle>New Task</DialogTitle>
                     <DialogDescription>
-                        Crea una nueva tarea y clasifícala según su importancia y urgencia.
+                        Create a new task and classify it based on its importance and urgency.
                     </DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
@@ -101,7 +101,7 @@ export function TaskForm({ onSubmit, trigger }: TaskFormProps) {
                             name="title"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Título</FormLabel>
+                                    <FormLabel>Title</FormLabel>
                                     <FormControl>
                                         <Input placeholder="Título de la tarea" {...field} />
                                     </FormControl>
@@ -115,10 +115,10 @@ export function TaskForm({ onSubmit, trigger }: TaskFormProps) {
                             name="description"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Descripción</FormLabel>
+                                    <FormLabel>Description</FormLabel>
                                     <FormControl>
                                         <Textarea
-                                            placeholder="Descripción de la tarea (opcional)"
+                                            placeholder="Description of the task (optional)"
                                             className="resize-none"
                                             {...field}
                                         />
@@ -133,7 +133,7 @@ export function TaskForm({ onSubmit, trigger }: TaskFormProps) {
                             name="priority"
                             render={({ field }) => (
                                 <FormItem className="space-y-3">
-                                    <FormLabel>Clasificación</FormLabel>
+                                    <FormLabel>Classification</FormLabel>
                                     <FormControl>
                                         <RadioGroup
                                             onValueChange={field.onChange}
