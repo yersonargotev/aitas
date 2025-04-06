@@ -2,14 +2,6 @@ import { openai } from "@ai-sdk/openai";
 import { generateText } from "ai";
 import { NextResponse } from "next/server";
 
-interface Task {
-	id: string;
-	title: string;
-	description?: string;
-	priority: "urgent" | "important" | "delegate" | "eliminate" | "unclassified";
-	dueDate?: Date;
-}
-
 export async function POST(req: Request) {
 	try {
 		const { tasks } = await req.json();
@@ -29,7 +21,7 @@ export async function POST(req: Request) {
     ${tasks.map((task) => `- ${task.title}${task.description ? `: ${task.description}` : ""}`).join("\n")}`;
 
 		const { text } = await generateText({
-			model: openai("gpt-4o-mini"),
+			model: openai("gpt-4o"),
 			system:
 				"You are a task classification expert. Analyze tasks and classify them into the Eisenhower Matrix quadrants based on their urgency and importance. Return only valid JSON with task IDs and their classifications.",
 			prompt: prompt,
