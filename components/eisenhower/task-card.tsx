@@ -149,7 +149,8 @@ export function TaskCard({
                             <Checkbox
                                 checked={completed}
                                 onCheckedChange={onToggleComplete}
-                                className="mt-1.5 sm:mt-0 shrink-0"
+                                className={cn("mt-1.5 sm:mt-0 shrink-0", isEditing && "hidden")}
+                                aria-hidden={isEditing}
                             />
                             {isEditing ? (
                                 <Input
