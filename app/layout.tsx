@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Eisenhower Task Manager",
-  description: "Gestiona tus tareas usando la matriz de Eisenhower",
+  description: "Manage your tasks using the Eisenhower Matrix",
 };
 
 export default function RootLayout({

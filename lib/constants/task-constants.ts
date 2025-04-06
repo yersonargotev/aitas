@@ -42,26 +42,26 @@ export const QUADRANT_INFO = {
  * Prioridades de tareas
  */
 export const PRIORITY_LEVELS = [
-	{ value: 1, label: "Muy Baja" },
-	{ value: 2, label: "Baja" },
-	{ value: 3, label: "Media" },
-	{ value: 4, label: "Alta" },
-	{ value: 5, label: "Muy Alta" },
+	{ value: 1, label: "Very Low" },
+	{ value: 2, label: "Low" },
+	{ value: 3, label: "Medium" },
+	{ value: 4, label: "High" },
+	{ value: 5, label: "Very High" },
 ];
 
 /**
  * Etiquetas predefinidas para las tareas
  */
 export const PREDEFINED_TAGS = [
-	"trabajo",
+	"work",
 	"personal",
-	"salud",
-	"finanzas",
-	"familia",
-	"estudio",
-	"proyecto",
-	"reunión",
-	"viaje",
+	"health",
+	"finances",
+	"family",
+	"study",
+	"project",
+	"meeting",
+	"travel",
 	"hogar",
 ];
 

@@ -141,7 +141,7 @@ export function Matrix() {
                                         {priority}
                                     </h2>
                                     <span className="text-sm text-muted-foreground">
-                                        {tasks.length} tareas
+                                        {tasks.length} tasks
                                     </span>
                                 </div>
                                 <div className="space-y-2">
