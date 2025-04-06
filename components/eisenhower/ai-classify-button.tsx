@@ -3,7 +3,7 @@
 import { ActionButton } from "@/components/eisenhower/action-button";
 import { useTaskStore } from "@/lib/stores/task-store";
 import type { TaskPriority } from "@/lib/stores/types";
-import { Loader2 } from "lucide-react";
+import { Loader2, Sparkle } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -95,6 +95,7 @@ export function AIClassifyButton() {
             disabled={isClassifying || unclassifiedTasks.length === 0}
             className="flex items-center gap-2"
         >
+            <Sparkle className="h-4 w-4 animate-pulse transition-all duration-300" />
             {isClassifying && <Loader2 className="h-4 w-4 animate-spin" />}
             {isClassifying ? "Classifying..." : "Classify Tasks"}
         </ActionButton>

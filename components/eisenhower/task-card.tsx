@@ -119,14 +119,14 @@ export function TaskCard({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.2 }}
-            className="w-full"
+            className="w-full h-full"
         >
             <Card
                 ref={setNodeRef}
                 style={style}
                 {...(isEditing ? {} : { ...attributes, ...listeners })}
                 className={cn(
-                    "relative group transition-all duration-200 hover:shadow-md",
+                    "relative group transition-all duration-200 hover:shadow-md h-full",
                     {
                         "opacity-50": completed,
                         "border-green-200 dark:border-green-800": completed,

@@ -37,8 +37,8 @@ const statusOptions = [
 
 export function TaskFilters({ filters, onFilterChange }: TaskFiltersProps) {
     return (
-        <div className="flex flex-col sm:flex-row gap-4 p-4 bg-card rounded-lg border">
-            <div className="flex-1">
+        <div className="flex flex-col sm:flex-row gap-4 py-4">
+            <div>
                 <Select
                     value={filters.priority}
                     onValueChange={(value) =>
@@ -57,7 +57,7 @@ export function TaskFilters({ filters, onFilterChange }: TaskFiltersProps) {
                     </SelectContent>
                 </Select>
             </div>
-            <div className="flex-1">
+            <div>
                 <Select
                     value={filters.status}
                     onValueChange={(value) =>

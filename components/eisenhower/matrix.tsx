@@ -129,10 +129,18 @@ export function Matrix() {
 
     return (
         <div className="space-y-6">
+            <div className="flex gap-2">
+                <TaskForm
+                    onSubmit={handleTaskCreate}
+                    trigger={
+                        <ActionButton>
+                            New Task
+                        </ActionButton>
+                    }
+                />
+                <AIClassifyButton />
+            </div>
             <div className="flex flex-col gap-4">
-                <div className="w-full mx-auto md:w-80">
-                    <TaskStatistics statistics={statistics} />
-                </div>
                 <div className="flex-1">
                     <TaskFilters filters={filters} onFilterChange={handleFilterChange} />
                 </div>
@@ -143,14 +151,14 @@ export function Matrix() {
                 onDragOver={handleDragOver}
                 onDragEnd={handleDragEnd}
             >
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 h-full">
                     {Object.entries(tasksByPriority).map(([priority, tasks]) => (
                         <DroppableZone
                             key={priority}
                             id={priority}
                             className="min-h-[200px]"
                         >
-                            <div className="space-y-4">
+                            <div className="space-y-4 h-full">
                                 <div className="flex items-center justify-between">
                                     <h2 className="text-lg font-semibold capitalize">
                                         {priority}
@@ -159,7 +167,7 @@ export function Matrix() {
                                         {tasks.length} tasks
                                     </span>
                                 </div>
-                                <div className="space-y-2">
+                                <div className="space-y-2 h-full">
                                     {tasks.map((task) => (
                                         <TaskCard
                                             key={task.id}
@@ -223,16 +231,10 @@ export function Matrix() {
                 </Accordion>
             )}
 
-            <div className="flex gap-2">
-                <TaskForm
-                    onSubmit={handleTaskCreate}
-                    trigger={
-                        <ActionButton>
-                            New Task
-                        </ActionButton>
-                    }
-                />
-                <AIClassifyButton />
+
+
+            <div className="w-full mx-auto">
+                <TaskStatistics statistics={statistics} />
             </div>
         </div>
     );
