@@ -41,36 +41,20 @@ export function AIClassifyButton() {
                 body: JSON.stringify({ tasks: tasksToClassify }),
             });
 
-            console.log("API response status:", response.status);
-
-            // Get the response text first for debugging
-            const responseText = await response.text();
-            console.log("API response text:", responseText);
-
-            let classifications: Record<string, string> | { error: string };
-
-            try {
-                // Try to parse the response as JSON
-                classifications = JSON.parse(responseText);
-            } catch (parseError) {
-                console.error("Error parsing API response as JSON:", parseError);
-                throw new Error(`Invalid JSON response: ${responseText.substring(0, 100)}...`);
-            }
-
             if (!response.ok) {
-                throw new Error('error' in classifications ? classifications.error : 'Failed to classify tasks');
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to classify tasks');
             }
 
-            console.log("Parsed classifications:", classifications);
+            // Parse the response
+            const classifications = await response.json();
+            console.log("Received classifications:", classifications);
 
             // Apply classifications to tasks
             let classifiedCount = 0;
             for (const [taskId, priority] of Object.entries(classifications)) {
-                if (typeof priority === "string" &&
-                    ["urgent", "important", "delegate", "eliminate"].includes(priority)) {
-                    moveTask(taskId, priority as TaskPriority);
-                    classifiedCount++;
-                }
+                moveTask(taskId, priority as TaskPriority);
+                classifiedCount++;
             }
 
             if (classifiedCount > 0) {
