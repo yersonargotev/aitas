@@ -8,6 +8,7 @@ import { TaskCard } from "@/components/eisenhower/task-card";
 import { TaskFilters } from "@/components/eisenhower/task-filters";
 import { TaskForm } from "@/components/eisenhower/task-form";
 import { TaskStatistics } from "@/components/eisenhower/task-statistics";
+import { UnclassifiedTasksSection } from "@/components/eisenhower/unclassified-tasks-section";
 import {
     Accordion,
     AccordionContent,
@@ -106,9 +107,6 @@ export function Matrix() {
         important: activeTasks.filter((task) => task.priority === "important"),
         delegate: activeTasks.filter((task) => task.priority === "delegate"),
         eliminate: activeTasks.filter((task) => task.priority === "eliminate"),
-        unclassified: activeTasks.filter(
-            (task) => task.priority === "unclassified",
-        ),
     };
 
     const handleDragEnd = (event: DragEndEvent) => {
@@ -128,16 +126,24 @@ export function Matrix() {
                 />
                 <AIClassifyButton />
             </div>
-            <div className="flex flex-col gap-4">
-                <div className="flex-1">
-                    <TaskFilters filters={filters} onFilterChange={handleFilterChange} />
-                </div>
-            </div>
 
             <DndContextProvider
                 onDragOver={handleDragOver}
                 onDragEnd={handleDragEnd}
             >
+                <UnclassifiedTasksSection
+                    tasks={tasks}
+                    onEdit={handleTaskEdit}
+                    onDelete={handleTaskDelete}
+                    onToggleComplete={toggleTaskCompletion}
+                />
+
+                <div className="flex flex-col gap-4">
+                    <div className="flex-1">
+                        <TaskFilters filters={filters} onFilterChange={handleFilterChange} />
+                    </div>
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     {Object.entries(tasksByPriority).map(([priority, tasks]) => (
                         <DroppableZone
