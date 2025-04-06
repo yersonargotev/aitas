@@ -9,7 +9,7 @@ interface TaskCardProps {
     id: string
     title: string
     description?: string
-    priority: "urgent" | "important" | "delegate" | "eliminate"
+    priority: "urgent" | "important" | "delegate" | "eliminate" | "unclassified"
     dueDate?: Date
     onEdit?: () => void
     onDelete?: () => void
@@ -21,7 +21,8 @@ const priorityColors = {
     urgent: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100",
     important: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100",
     delegate: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100",
-    eliminate: "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-100"
+    eliminate: "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-100",
+    unclassified: "bg-slate-100 text-slate-800 dark:bg-slate-900 dark:text-slate-100"
 }
 
 export function TaskCard({

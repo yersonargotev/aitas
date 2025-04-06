@@ -7,17 +7,19 @@ import { ActionButton } from "./action-button";
 import { DndContextProvider } from "./dnd-context-provider";
 import { DroppableZone } from "./droppable-zone";
 import { TaskCard } from "./task-card";
+import { TaskForm } from "./task-form";
 
 interface Task {
     id: string;
     title: string;
     description?: string;
-    priority: "urgent" | "important" | "delegate" | "eliminate";
+    priority: "urgent" | "important" | "delegate" | "eliminate" | "unclassified";
     dueDate?: Date;
 }
 
 interface EisenhowerMatrixProps {
     tasks: Task[];
+    onTaskCreate: (task: Task) => void;
     onTaskEdit?: (taskId: string) => void;
     onTaskDelete?: (taskId: string) => void;
     onTaskMove?: (taskId: string, newPriority: Task["priority"]) => void;
@@ -25,6 +27,7 @@ interface EisenhowerMatrixProps {
 
 export function EisenhowerMatrix({
     tasks,
+    onTaskCreate,
     onTaskEdit,
     onTaskDelete,
     onTaskMove,
@@ -34,6 +37,7 @@ export function EisenhowerMatrix({
         important: tasks.filter((task) => task.priority === "important"),
         delegate: tasks.filter((task) => task.priority === "delegate"),
         eliminate: tasks.filter((task) => task.priority === "eliminate"),
+        unclassified: tasks.filter((task) => task.priority === "unclassified"),
     };
 
     const handleDragEnd = (event: DragEndEvent) => {
@@ -52,6 +56,30 @@ export function EisenhowerMatrix({
     return (
         <DndContextProvider onDragEnd={handleDragEnd}>
             <div className="relative w-full">
+                {/* Task Form */}
+                <div className="mb-4">
+                    <TaskForm onSubmit={onTaskCreate} />
+                </div>
+
+                {/* Unclassified Tasks */}
+                {quadrants.unclassified.length > 0 && (
+                    <div className="mb-6">
+                        <h2 className="text-xl font-bold text-slate-600 dark:text-slate-400 mb-2">
+                            Tareas sin clasificar
+                        </h2>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {quadrants.unclassified.map((task) => (
+                                <TaskCard
+                                    key={task.id}
+                                    {...task}
+                                    onEdit={() => onTaskEdit?.(task.id)}
+                                    onDelete={() => onTaskDelete?.(task.id)}
+                                />
+                            ))}
+                        </div>
+                    </div>
+                )}
+
                 {/* Headers */}
                 <div className="grid grid-cols-2 gap-4 mb-4">
                     <div className="text-center font-semibold text-lg">Urgente</div>
