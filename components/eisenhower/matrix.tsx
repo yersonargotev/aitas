@@ -67,17 +67,19 @@ export function Matrix() {
         addTask(task);
     };
 
-    const handleTaskEdit = (taskId: string) => {
-        setEditingTaskId(taskId);
+    const handleTaskEdit = (taskId: string, updates?: { title?: string; description?: string }) => {
+        if (updates) {
+            // If updates are provided, update the task
+            updateTask(taskId, updates);
+            setEditingTaskId(null);
+        } else {
+            // Otherwise, set the task as being edited
+            setEditingTaskId(taskId);
+        }
     };
 
     const handleTaskDelete = (taskId: string) => {
         deleteTask(taskId);
-    };
-
-    const handleTaskUpdate = (taskId: string, updates: Partial<Task>) => {
-        updateTask(taskId, updates);
-        setEditingTaskId(null);
     };
 
     const handleFilterChange = (
@@ -149,7 +151,7 @@ export function Matrix() {
                                         <TaskCard
                                             key={task.id}
                                             {...task}
-                                            onEdit={() => handleTaskEdit(task.id)}
+                                            onEdit={(updates) => handleTaskEdit(task.id, updates)}
                                             onDelete={() => handleTaskDelete(task.id)}
                                             onToggleComplete={() => toggleTaskCompletion(task.id)}
                                         />

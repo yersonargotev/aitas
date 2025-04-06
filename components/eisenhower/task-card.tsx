@@ -7,6 +7,8 @@ import {
     CardHeader,
 } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import type { TaskPriority } from "@/lib/stores/types";
 import { cn } from "@/lib/utils";
 import { useDraggable } from "@dnd-kit/core";
@@ -21,7 +23,7 @@ interface TaskCardProps {
     priority: TaskPriority;
     dueDate?: Date;
     completed?: boolean;
-    onEdit?: () => void;
+    onEdit?: (updates?: { title?: string; description?: string }) => void;
     onDelete?: () => void;
     onToggleComplete?: () => void;
     className?: string;
@@ -59,6 +61,10 @@ export function TaskCard({
     className,
 }: TaskCardProps) {
     const [isHovered, setIsHovered] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
+    const [editedTitle, setEditedTitle] = useState(title);
+    const [editedDescription, setEditedDescription] = useState(description || "");
+
     const { attributes, listeners, setNodeRef, transform, isDragging } =
         useDraggable({
             id,
@@ -71,7 +77,39 @@ export function TaskCard({
     const style = {
         transform: CSS.Translate.toString(transform),
         opacity: isDragging ? 0.5 : undefined,
-        cursor: "grab",
+        cursor: isEditing ? "default" : "grab",
+    };
+
+    const handleEditClick = () => {
+        if (onEdit) {
+            if (isEditing) {
+                onEdit({
+                    title: editedTitle,
+                    description: editedDescription || undefined,
+                });
+                setIsEditing(false);
+            } else {
+                onEdit();
+                setIsEditing(true);
+            }
+        } else {
+            setIsEditing(true);
+        }
+    };
+
+    const handleCancel = () => {
+        setEditedTitle(title);
+        setEditedDescription(description || "");
+        setIsEditing(false);
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            handleEditClick();
+        } else if (e.key === "Escape") {
+            handleCancel();
+        }
     };
 
     return (
@@ -84,8 +122,7 @@ export function TaskCard({
             <Card
                 ref={setNodeRef}
                 style={style}
-                {...attributes}
-                {...listeners}
+                {...(isEditing ? {} : { ...attributes, ...listeners })}
                 className={cn(
                     "relative group transition-all duration-200",
                     {
@@ -99,19 +136,29 @@ export function TaskCard({
             >
                 <CardHeader className="pb-2">
                     <div className="flex items-start justify-between gap-2">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 w-full">
                             <Checkbox
                                 checked={completed}
                                 onCheckedChange={onToggleComplete}
                                 className="mt-1"
                             />
-                            <h3
-                                className={cn("font-semibold leading-none tracking-tight", {
-                                    "line-through text-muted-foreground": completed,
-                                })}
-                            >
-                                {title}
-                            </h3>
+                            {isEditing ? (
+                                <Input
+                                    value={editedTitle}
+                                    onChange={(e) => setEditedTitle(e.target.value)}
+                                    onKeyDown={handleKeyDown}
+                                    className="font-semibold"
+                                    autoFocus
+                                />
+                            ) : (
+                                <h3
+                                    className={cn("font-semibold leading-none tracking-tight", {
+                                        "line-through text-muted-foreground": completed,
+                                    })}
+                                >
+                                    {title}
+                                </h3>
+                            )}
                         </div>
                         <Badge
                             variant="secondary"
@@ -121,26 +168,55 @@ export function TaskCard({
                         </Badge>
                     </div>
                 </CardHeader>
-                {description && (
+                {isEditing ? (
                     <CardContent className="pb-2">
-                        <p
-                            className={cn("text-sm text-muted-foreground", {
-                                "line-through": completed,
-                            })}
-                        >
-                            {description}
-                        </p>
+                        <Textarea
+                            value={editedDescription}
+                            onChange={(e) => setEditedDescription(e.target.value)}
+                            onKeyDown={handleKeyDown}
+                            placeholder="Add a description..."
+                            className="min-h-[80px] resize-none"
+                        />
+                        <div className="flex justify-end gap-2 mt-2">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={handleCancel}
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                size="sm"
+                                onClick={handleEditClick}
+                            >
+                                Save
+                            </Button>
+                        </div>
                     </CardContent>
-                )}
-                {dueDate && (
-                    <CardContent className="pb-2">
-                        <p className="text-xs text-muted-foreground">
-                            Vence: {new Date(dueDate).toLocaleDateString()}
-                        </p>
-                    </CardContent>
+                ) : (
+                    <>
+                        {description && (
+                            <CardContent className="pb-2">
+                                <p
+                                    className={cn("text-sm text-muted-foreground", {
+                                        "line-through": completed,
+                                    })}
+                                >
+                                    {description}
+                                </p>
+                            </CardContent>
+                        )}
+                        {dueDate && (
+                            <CardContent className="pb-2">
+                                <p className="text-xs text-muted-foreground">
+                                    Vence: {new Date(dueDate).toLocaleDateString()}
+                                </p>
+                            </CardContent>
+                        )}
+                    </>
                 )}
                 <AnimatePresence>
-                    {isHovered && (
+                    {isHovered && !isEditing && (
                         <CardFooter className="absolute right-2 top-2 flex gap-1">
                             <motion.div
                                 initial={{ opacity: 0, scale: 0.8 }}
@@ -151,9 +227,9 @@ export function TaskCard({
                                 <Button
                                     variant="ghost"
                                     size="icon"
-                                    onClick={onEdit}
+                                    onClick={handleEditClick}
                                     className="h-8 w-8"
-                                    aria-label="Editar tarea"
+                                    aria-label="Edit task"
                                 >
                                     <svg
                                         xmlns="http://www.w3.org/2000/svg"
@@ -182,7 +258,7 @@ export function TaskCard({
                                     size="icon"
                                     onClick={onDelete}
                                     className="h-8 w-8 text-destructive hover:text-destructive"
-                                    aria-label="Eliminar tarea"
+                                    aria-label="Delete task"
                                 >
                                     <svg
                                         xmlns="http://www.w3.org/2000/svg"
