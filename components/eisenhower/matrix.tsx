@@ -129,12 +129,12 @@ export function Matrix() {
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex flex-col gap-4">
+                <div className="w-full mx-auto md:w-80">
+                    <TaskStatistics statistics={statistics} />
+                </div>
                 <div className="flex-1">
                     <TaskFilters filters={filters} onFilterChange={handleFilterChange} />
-                </div>
-                <div className="w-full md:w-80">
-                    <TaskStatistics statistics={statistics} />
                 </div>
             </div>
 
