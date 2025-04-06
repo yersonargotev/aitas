@@ -138,14 +138,14 @@ export function TaskCard({
                 onMouseLeave={() => setIsHovered(false)}
             >
                 <CardHeader className="pb-2 space-y-2">
-                    <div className="flex flex-col items-start justify-between gap-2 relative pr-16 sm:pr-2">
+                    <div className="flex flex-col items-start justify-between gap-2 relative pr-8 sm:pr-2">
                         <Badge
                             variant="secondary"
                             className={cn("shrink-0 whitespace-nowrap", priorityColors[priority])}
                         >
                             {priorityLabels[priority]}
                         </Badge>
-                        <div className="flex items-start sm:items-center gap-2 w-full min-w-0">
+                        <div className="flex items-start sm:items-center gap-2 w-full">
                             <Checkbox
                                 checked={completed}
                                 onCheckedChange={onToggleComplete}
@@ -156,7 +156,7 @@ export function TaskCard({
                                     value={editedTitle}
                                     onChange={(e) => setEditedTitle(e.target.value)}
                                     onKeyDown={handleKeyDown}
-                                    className="font-semibold min-w-[200px]"
+                                    className="font-semibold w-full"
                                     autoFocus
                                 />
                             ) : (
@@ -171,29 +171,30 @@ export function TaskCard({
                                 </div>
                             )}
                         </div>
-
                     </div>
                 </CardHeader>
                 {isEditing ? (
-                    <CardContent className="pb-2">
+                    <CardContent className="pb-2 space-y-4">
                         <Textarea
                             value={editedDescription}
                             onChange={(e) => setEditedDescription(e.target.value)}
                             onKeyDown={handleKeyDown}
                             placeholder="Add a description..."
-                            className="min-h-[80px] resize-none"
+                            className="min-h-[80px] resize-none w-full"
                         />
-                        <div className="flex justify-end gap-2 mt-2">
+                        <div className="flex justify-end gap-2">
                             <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={handleCancel}
+                                className="w-full sm:w-auto"
                             >
                                 Cancel
                             </Button>
                             <Button
                                 size="sm"
                                 onClick={handleEditClick}
+                                className="w-full sm:w-auto"
                             >
                                 Save
                             </Button>
