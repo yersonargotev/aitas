@@ -3,6 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
+import { v4 as uuidv4 } from "uuid"
 import * as z from "zod"
 
 import { Button } from "@/components/ui/button"
@@ -67,8 +68,8 @@ export function TaskForm({ onSubmit, trigger }: TaskFormProps) {
 
     // Handle form submission
     const handleSubmit = (values: TaskFormValues) => {
-        // Generate a unique ID for the task using crypto.randomUUID()
-        const taskId = crypto.randomUUID()
+        // Generate a unique ID for the task using uuid
+        const taskId = uuidv4()
 
         // Call the onSubmit prop with the new task
         onSubmit({
