@@ -1,5 +1,9 @@
-import {
-    type DragEndEvent,
+"use client";
+
+import { useTaskStore } from "@/lib/stores/task-store";
+import type { TaskPriority } from "@/lib/stores/types";
+import type {
+    DragEndEvent,
     DragOverEvent,
     DragStartEvent,
 } from "@dnd-kit/core";
@@ -9,228 +13,162 @@ import { AIClassifier } from "./ai-classifier";
 import { DndContextProvider } from "./dnd-context-provider";
 import { DroppableZone } from "./droppable-zone";
 import { TaskCard } from "./task-card";
+import { TaskFilters } from "./task-filters";
 import { TaskForm } from "./task-form";
+import { TaskStatistics } from "./task-statistics";
 
 interface Task {
     id: string;
     title: string;
     description?: string;
-    priority: "urgent" | "important" | "delegate" | "eliminate" | "unclassified";
+    priority: TaskPriority;
     dueDate?: Date;
+    completed?: boolean;
 }
 
-interface EisenhowerMatrixProps {
-    tasks: Task[];
-    onTaskCreate: (task: Task) => void;
-    onTaskEdit?: (taskId: string) => void;
-    onTaskDelete?: (taskId: string) => void;
-    onTaskMove?: (taskId: string, newPriority: Task["priority"]) => void;
-}
+export function Matrix() {
+    const {
+        tasks,
+        filters,
+        statistics,
+        addTask,
+        updateTask,
+        deleteTask,
+        moveTask,
+        toggleTaskCompletion,
+        setFilter,
+    } = useTaskStore();
 
-export function EisenhowerMatrix({
-    tasks,
-    onTaskCreate,
-    onTaskEdit,
-    onTaskDelete,
-    onTaskMove,
-}: EisenhowerMatrixProps) {
-    const [showClassifier, setShowClassifier] = useState(false);
+    const [activeId, setActiveId] = useState<string | null>(null);
+    const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
 
-    const quadrants = {
-        urgent: tasks.filter((task) => task.priority === "urgent"),
-        important: tasks.filter((task) => task.priority === "important"),
-        delegate: tasks.filter((task) => task.priority === "delegate"),
-        eliminate: tasks.filter((task) => task.priority === "eliminate"),
-        unclassified: tasks.filter((task) => task.priority === "unclassified"),
+    const handleDragStart = (event: DragStartEvent) => {
+        setActiveId(event.active.id as string);
+    };
+
+    const handleDragOver = (event: DragOverEvent) => {
+        const { active, over } = event;
+        if (!over) return;
+
+        const activeTask = tasks.find((task) => task.id === active.id);
+        if (!activeTask) return;
+
+        const overId = over.id as string;
+        if (activeTask.priority === overId) return;
+
+        moveTask(activeTask.id, overId as TaskPriority);
     };
 
     const handleDragEnd = (event: DragEndEvent) => {
-        const { active, over } = event;
-
-        if (!over) return;
-
-        const taskId = active.id as string;
-        const newPriority = over.id as Task["priority"];
-
-        if (taskId && newPriority) {
-            onTaskMove?.(taskId, newPriority);
-        }
+        setActiveId(null);
     };
 
-    const handleTasksClassified = (classifications: Record<string, Task["priority"]>) => {
-        for (const [taskId, priority] of Object.entries(classifications)) {
-            onTaskMove?.(taskId, priority);
+    const handleTaskCreate = (task: Omit<Task, "id">) => {
+        addTask(task);
+    };
+
+    const handleTaskEdit = (taskId: string) => {
+        setEditingTaskId(taskId);
+    };
+
+    const handleTaskDelete = (taskId: string) => {
+        deleteTask(taskId);
+    };
+
+    const handleTaskUpdate = (taskId: string, updates: Partial<Task>) => {
+        updateTask(taskId, updates);
+        setEditingTaskId(null);
+    };
+
+    const handleFilterChange = (
+        filterType: "priority" | "status",
+        value: TaskPriority | "all" | "completed" | "pending",
+    ) => {
+        setFilter(filterType, value);
+    };
+
+    // Filter tasks based on current filters
+    const filteredTasks = tasks.filter((task) => {
+        if (filters.priority !== "all" && task.priority !== filters.priority) {
+            return false;
         }
-        setShowClassifier(false);
+        if (filters.status === "completed" && !task.completed) {
+            return false;
+        }
+        if (filters.status === "pending" && task.completed) {
+            return false;
+        }
+        return true;
+    });
+
+    // Group tasks by priority
+    const tasksByPriority = {
+        urgent: filteredTasks.filter((task) => task.priority === "urgent"),
+        important: filteredTasks.filter((task) => task.priority === "important"),
+        delegate: filteredTasks.filter((task) => task.priority === "delegate"),
+        eliminate: filteredTasks.filter((task) => task.priority === "eliminate"),
+        unclassified: filteredTasks.filter(
+            (task) => task.priority === "unclassified",
+        ),
     };
 
     return (
-        <DndContextProvider onDragEnd={handleDragEnd}>
-            <div className="relative w-full">
-                {/* Task Form */}
-                <div className="mb-4">
-                    <TaskForm onSubmit={onTaskCreate} />
+        <div className="space-y-6">
+            <div className="flex flex-col md:flex-row gap-4">
+                <div className="flex-1">
+                    <TaskFilters filters={filters} onFilterChange={handleFilterChange} />
                 </div>
-
-                {/* AI Classifier Toggle */}
-                <div className="mb-4">
-                    <ActionButton
-                        onClick={() => setShowClassifier(!showClassifier)}
-                        variant="outline"
-                    >
-                        {showClassifier ? "Hide AI Classifier" : "Show AI Classifier"}
-                    </ActionButton>
-                </div>
-
-                {/* AI Classifier */}
-                {showClassifier && (
-                    <div className="mb-6">
-                        <AIClassifier
-                            tasks={tasks}
-                            onTasksClassified={handleTasksClassified}
-                        />
-                    </div>
-                )}
-
-                {/* Unclassified Tasks */}
-                {quadrants.unclassified.length > 0 && (
-                    <div className="mb-6">
-                        <h2 className="text-xl font-bold text-slate-600 dark:text-slate-400 mb-2">
-                            Tareas sin clasificar
-                        </h2>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {quadrants.unclassified.map((task) => (
-                                <TaskCard
-                                    key={task.id}
-                                    {...task}
-                                    onEdit={() => onTaskEdit?.(task.id)}
-                                    onDelete={() => onTaskDelete?.(task.id)}
-                                />
-                            ))}
-                        </div>
-                    </div>
-                )}
-
-                {/* Headers */}
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                    <div className="text-center font-semibold text-lg">Urgente</div>
-                    <div className="text-center font-semibold text-lg">No Urgente</div>
-                </div>
-
-                {/* Left side label */}
-                <div className="absolute left-[-40px] top-1/2 -translate-y-1/2 transform">
-                    <div className="rotate-[-90deg] whitespace-nowrap">
-                        <span className="font-semibold text-lg">Importante</span>
-                    </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 relative">
-                    {/* Urgent & Important */}
-                    <DroppableZone
-                        id="urgent"
-                        className="rounded-lg border-2 border-red-200 bg-red-50/30 dark:bg-red-950/10 p-4"
-                    >
-                        <div className="mb-6">
-                            <h2 className="text-xl font-bold text-red-600 dark:text-red-400 mb-2">
-                                Do it now
-                            </h2>
-                            <p className="text-sm text-muted-foreground">
-                                Tareas que requieren atención inmediata
-                            </p>
-                        </div>
-                        <div className="space-y-4 min-h-[200px]">
-                            {quadrants.urgent.map((task) => (
-                                <TaskCard
-                                    key={task.id}
-                                    {...task}
-                                    onEdit={() => onTaskEdit?.(task.id)}
-                                    onDelete={() => onTaskDelete?.(task.id)}
-                                />
-                            ))}
-                        </div>
-                    </DroppableZone>
-
-                    {/* Important & Not Urgent */}
-                    <DroppableZone
-                        id="important"
-                        className="rounded-lg border-2 border-blue-200 bg-blue-50/30 dark:bg-blue-950/10 p-4"
-                    >
-                        <div className="mb-6">
-                            <h2 className="text-xl font-bold text-blue-600 dark:text-blue-400 mb-2">
-                                Decide
-                            </h2>
-                            <p className="text-sm text-muted-foreground">
-                                Programa un tiempo específico para realizarlo
-                            </p>
-                        </div>
-                        <div className="space-y-4 min-h-[200px]">
-                            {quadrants.important.map((task) => (
-                                <TaskCard
-                                    key={task.id}
-                                    {...task}
-                                    onEdit={() => onTaskEdit?.(task.id)}
-                                    onDelete={() => onTaskDelete?.(task.id)}
-                                />
-                            ))}
-                        </div>
-                    </DroppableZone>
-
-                    {/* Urgent & Not Important */}
-                    <DroppableZone
-                        id="delegate"
-                        className="rounded-lg border-2 border-yellow-200 bg-yellow-50/30 dark:bg-yellow-950/10 p-4"
-                    >
-                        <div className="mb-6">
-                            <h2 className="text-xl font-bold text-yellow-600 dark:text-yellow-400 mb-2">
-                                Delegate
-                            </h2>
-                            <p className="text-sm text-muted-foreground">
-                                ¿Quién puede hacerlo por ti?
-                            </p>
-                        </div>
-                        <div className="space-y-4 min-h-[200px]">
-                            {quadrants.delegate.map((task) => (
-                                <TaskCard
-                                    key={task.id}
-                                    {...task}
-                                    onEdit={() => onTaskEdit?.(task.id)}
-                                    onDelete={() => onTaskDelete?.(task.id)}
-                                />
-                            ))}
-                        </div>
-                    </DroppableZone>
-
-                    {/* Not Urgent & Not Important */}
-                    <DroppableZone
-                        id="eliminate"
-                        className="rounded-lg border-2 border-gray-200 bg-gray-50/30 dark:bg-gray-950/10 p-4"
-                    >
-                        <div className="mb-6">
-                            <h2 className="text-xl font-bold text-gray-600 dark:text-gray-400 mb-2">
-                                Delete
-                            </h2>
-                            <p className="text-sm text-muted-foreground">Elimínalo</p>
-                        </div>
-                        <div className="space-y-4 min-h-[200px]">
-                            {quadrants.eliminate.map((task) => (
-                                <TaskCard
-                                    key={task.id}
-                                    {...task}
-                                    onEdit={() => onTaskEdit?.(task.id)}
-                                    onDelete={() => onTaskDelete?.(task.id)}
-                                />
-                            ))}
-                        </div>
-                    </DroppableZone>
-                </div>
-
-                {/* Right side label */}
-                <div className="absolute right-[-40px] top-1/2 -translate-y-1/2 transform">
-                    <div className="rotate-90 whitespace-nowrap">
-                        <span className="font-semibold text-lg">No Importante</span>
-                    </div>
+                <div className="w-full md:w-80">
+                    <TaskStatistics statistics={statistics} />
                 </div>
             </div>
-        </DndContextProvider>
+
+            <DndContextProvider
+                onDragStart={handleDragStart}
+                onDragOver={handleDragOver}
+                onDragEnd={handleDragEnd}
+            >
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {Object.entries(tasksByPriority).map(([priority, tasks]) => (
+                        <DroppableZone
+                            key={priority}
+                            id={priority}
+                            className="min-h-[200px]"
+                        >
+                            <div className="space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <h2 className="text-lg font-semibold capitalize">
+                                        {priority}
+                                    </h2>
+                                    <span className="text-sm text-muted-foreground">
+                                        {tasks.length} tareas
+                                    </span>
+                                </div>
+                                <div className="space-y-2">
+                                    {tasks.map((task) => (
+                                        <TaskCard
+                                            key={task.id}
+                                            {...task}
+                                            onEdit={() => handleTaskEdit(task.id)}
+                                            onDelete={() => handleTaskDelete(task.id)}
+                                            onToggleComplete={() => toggleTaskCompletion(task.id)}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+                        </DroppableZone>
+                    ))}
+                </div>
+            </DndContextProvider>
+
+            <TaskForm
+                onSubmit={handleTaskCreate}
+                trigger={
+                    <ActionButton>
+                        Nueva Tarea
+                    </ActionButton>
+                }
+            />
+        </div>
     );
 }

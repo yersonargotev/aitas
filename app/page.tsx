@@ -1,6 +1,6 @@
 "use client"
 
-import { EisenhowerMatrix } from "@/components/eisenhower/matrix"
+import { Matrix } from "@/components/eisenhower/matrix"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useTasks } from "@/lib/hooks/use-tasks"
 import { AlertCircle } from "lucide-react"
@@ -56,13 +56,7 @@ export default function Home() {
         </Alert>
       )}
 
-      <EisenhowerMatrix
-        tasks={tasks}
-        onTaskCreate={addTask}
-        onTaskEdit={handleTaskEdit}
-        onTaskDelete={deleteTask}
-        onTaskMove={moveTask}
-      />
+      <Matrix />
     </div>
   )
 }

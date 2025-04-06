@@ -3,7 +3,13 @@
 import { v4 as uuidv4 } from "uuid";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
-import { type Task, TaskPriority, type TaskStore } from "./types";
+import type {
+	Task,
+	TaskActions,
+	TaskPriority,
+	TaskState,
+	TaskStore,
+} from "./types";
 
 // Initial state
 const initialState = {
@@ -11,10 +17,52 @@ const initialState = {
 	selectedTaskIds: [],
 	isLoading: false,
 	error: null,
+	filters: {
+		priority: "all" as const,
+		status: "all" as const,
+	},
+	statistics: {
+		totalTasks: 0,
+		completedTasks: 0,
+		tasksByPriority: {} as Record<TaskPriority, number>,
+		completedTasksByPriority: {} as Record<TaskPriority, number>,
+	},
+};
+
+const calculateStatistics = (tasks: Task[]) => {
+	const statistics = {
+		totalTasks: tasks.length,
+		completedTasks: tasks.filter((task) => task.completed).length,
+		tasksByPriority: {} as Record<TaskPriority, number>,
+		completedTasksByPriority: {} as Record<TaskPriority, number>,
+	};
+
+	// Initialize counters for each priority
+	const priorities: TaskPriority[] = [
+		"urgent",
+		"important",
+		"delegate",
+		"eliminate",
+		"unclassified",
+	];
+	for (const priority of priorities) {
+		statistics.tasksByPriority[priority] = 0;
+		statistics.completedTasksByPriority[priority] = 0;
+	}
+
+	// Count tasks by priority
+	for (const task of tasks) {
+		statistics.tasksByPriority[task.priority]++;
+		if (task.completed) {
+			statistics.completedTasksByPriority[task.priority]++;
+		}
+	}
+
+	return statistics;
 };
 
 // Create the store with persist middleware
-export const useTaskStore = create<TaskStore>()(
+export const useTaskStore = create<TaskState & TaskActions>()(
 	persist(
 		(set, get) => ({
 			// Initial state
@@ -29,10 +77,12 @@ export const useTaskStore = create<TaskStore>()(
 						id: uuidv4(),
 						createdAt: now,
 						updatedAt: now,
+						completed: false,
 					};
 
 					set((state) => ({
 						tasks: [...state.tasks, newTask],
+						statistics: calculateStatistics([...state.tasks, newTask]),
 						error: null,
 					}));
 				} catch (error) {
@@ -42,14 +92,18 @@ export const useTaskStore = create<TaskStore>()(
 
 			updateTask: (taskId, updates) => {
 				try {
-					set((state) => ({
-						tasks: state.tasks.map((task) =>
+					set((state) => {
+						const updatedTasks = state.tasks.map((task) =>
 							task.id === taskId
 								? { ...task, ...updates, updatedAt: new Date() }
 								: task,
-						),
-						error: null,
-					}));
+						);
+						return {
+							tasks: updatedTasks,
+							statistics: calculateStatistics(updatedTasks),
+							error: null,
+						};
+					});
 				} catch (error) {
 					set({ error: "Error updating task" });
 				}
@@ -57,13 +111,19 @@ export const useTaskStore = create<TaskStore>()(
 
 			deleteTask: (taskId) => {
 				try {
-					set((state) => ({
-						tasks: state.tasks.filter((task) => task.id !== taskId),
-						selectedTaskIds: state.selectedTaskIds.filter(
-							(id) => id !== taskId,
-						),
-						error: null,
-					}));
+					set((state) => {
+						const filteredTasks = state.tasks.filter(
+							(task) => task.id !== taskId,
+						);
+						return {
+							tasks: filteredTasks,
+							statistics: calculateStatistics(filteredTasks),
+							selectedTaskIds: state.selectedTaskIds.filter(
+								(id) => id !== taskId,
+							),
+							error: null,
+						};
+					});
 				} catch (error) {
 					set({ error: "Error deleting task" });
 				}
@@ -72,14 +132,18 @@ export const useTaskStore = create<TaskStore>()(
 			// Task movement and status
 			moveTask: (taskId, newPriority) => {
 				try {
-					set((state) => ({
-						tasks: state.tasks.map((task) =>
+					set((state) => {
+						const updatedTasks = state.tasks.map((task) =>
 							task.id === taskId
 								? { ...task, priority: newPriority, updatedAt: new Date() }
 								: task,
-						),
-						error: null,
-					}));
+						);
+						return {
+							tasks: updatedTasks,
+							statistics: calculateStatistics(updatedTasks),
+							error: null,
+						};
+					});
 				} catch (error) {
 					set({ error: "Error moving task" });
 				}
@@ -87,18 +151,18 @@ export const useTaskStore = create<TaskStore>()(
 
 			toggleTaskCompletion: (taskId) => {
 				try {
-					set((state) => ({
-						tasks: state.tasks.map((task) =>
+					set((state) => {
+						const updatedTasks = state.tasks.map((task) =>
 							task.id === taskId
-								? {
-										...task,
-										completed: !task.completed,
-										updatedAt: new Date(),
-									}
+								? { ...task, completed: !task.completed, updatedAt: new Date() }
 								: task,
-						),
-						error: null,
-					}));
+						);
+						return {
+							tasks: updatedTasks,
+							statistics: calculateStatistics(updatedTasks),
+							error: null,
+						};
+					});
 				} catch (error) {
 					set({ error: "Error toggling task completion" });
 				}
@@ -137,6 +201,19 @@ export const useTaskStore = create<TaskStore>()(
 				}
 			},
 
+			// Filter management
+			setFilter: (
+				filterType: "priority" | "status",
+				value: TaskPriority | "all" | "completed" | "pending",
+			) => {
+				set((state) => ({
+					filters: {
+						...state.filters,
+						[filterType]: value,
+					},
+				}));
+			},
+
 			// State management
 			setError: (error) => set({ error }),
 			clearError: () => set({ error: null }),
@@ -148,6 +225,8 @@ export const useTaskStore = create<TaskStore>()(
 			partialize: (state) => ({
 				tasks: state.tasks,
 				selectedTaskIds: state.selectedTaskIds,
+				filters: state.filters,
+				statistics: state.statistics,
 			}),
 			// Handle errors during storage operations
 			onRehydrateStorage: () => (state) => {

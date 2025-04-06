@@ -21,6 +21,16 @@ export interface TaskState {
 	selectedTaskIds: string[];
 	isLoading: boolean;
 	error: string | null;
+	filters: {
+		priority: TaskPriority | "all";
+		status: "all" | "completed" | "pending";
+	};
+	statistics: {
+		totalTasks: number;
+		completedTasks: number;
+		tasksByPriority: Record<TaskPriority, number>;
+		completedTasksByPriority: Record<TaskPriority, number>;
+	};
 }
 
 export interface TaskActions {
@@ -40,6 +50,12 @@ export interface TaskActions {
 	selectTask: (taskId: string) => void;
 	deselectTask: (taskId: string) => void;
 	clearSelectedTasks: () => void;
+
+	// Filter management
+	setFilter: (
+		filterType: "priority" | "status",
+		value: TaskPriority | "all" | "completed" | "pending",
+	) => void;
 
 	// State management
 	setError: (error: string | null) => void;
