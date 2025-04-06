@@ -1,6 +1,7 @@
 "use client";
 
 import { ActionButton } from "@/components/eisenhower/action-button";
+import { AIClassifyButton } from "@/components/eisenhower/ai-classify-button";
 import { DndContextProvider } from "@/components/eisenhower/dnd-context-provider";
 import { DroppableZone } from "@/components/eisenhower/droppable-zone";
 import { TaskCard } from "@/components/eisenhower/task-card";
@@ -160,14 +161,17 @@ export function Matrix() {
                 </div>
             </DndContextProvider>
 
-            <TaskForm
-                onSubmit={handleTaskCreate}
-                trigger={
-                    <ActionButton>
-                        New Task
-                    </ActionButton>
-                }
-            />
+            <div className="flex gap-2">
+                <TaskForm
+                    onSubmit={handleTaskCreate}
+                    trigger={
+                        <ActionButton>
+                            New Task
+                        </ActionButton>
+                    }
+                />
+                <AIClassifyButton />
+            </div>
         </div>
     );
 }
