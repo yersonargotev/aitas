@@ -77,32 +77,32 @@ export const mockEisenhowerMatrix: EisenhowerMatrix = {
 	quadrants: {
 		[EisenhowerQuadrant.Q1]: {
 			id: EisenhowerQuadrant.Q1,
-			title: "Urgente y Importante",
-			description: "Hazlo ahora",
+			title: "Urgent and Important",
+			description: "Do it now",
 			tasks: mockTasks.filter(
 				(task) => task.quadrant === EisenhowerQuadrant.Q1,
 			),
 		},
 		[EisenhowerQuadrant.Q2]: {
 			id: EisenhowerQuadrant.Q2,
-			title: "Importante pero no Urgente",
-			description: "Programa para hacerlo",
+			title: "Important but not Urgent",
+			description: "Schedule it",
 			tasks: mockTasks.filter(
 				(task) => task.quadrant === EisenhowerQuadrant.Q2,
 			),
 		},
 		[EisenhowerQuadrant.Q3]: {
 			id: EisenhowerQuadrant.Q3,
-			title: "Urgente pero no Importante",
-			description: "Delega si es posible",
+			title: "Urgent but not Important",
+			description: "Delegate if possible",
 			tasks: mockTasks.filter(
 				(task) => task.quadrant === EisenhowerQuadrant.Q3,
 			),
 		},
 		[EisenhowerQuadrant.Q4]: {
 			id: EisenhowerQuadrant.Q4,
-			title: "Ni Urgente ni Importante",
-			description: "Elimina o pospon",
+			title: "Neither Urgent nor Important",
+			description: "Eliminate or postpone",
 			tasks: mockTasks.filter(
 				(task) => task.quadrant === EisenhowerQuadrant.Q4,
 			),

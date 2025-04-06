@@ -165,7 +165,7 @@ export function Matrix() {
                 onSubmit={handleTaskCreate}
                 trigger={
                     <ActionButton>
-                        Nueva Tarea
+                        New Task
                     </ActionButton>
                 }
             />

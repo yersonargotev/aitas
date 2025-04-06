@@ -14,11 +14,11 @@ interface TaskStatisticsProps {
 }
 
 const priorityLabels: Record<TaskPriority, string> = {
-    urgent: "Urgente",
-    important: "Importante",
-    delegate: "Delegar",
-    eliminate: "Eliminar",
-    unclassified: "Sin clasificar",
+    urgent: "Urgent",
+    important: "Important",
+    delegate: "Delegate",
+    eliminate: "Eliminate",
+    unclassified: "Unclassified",
 };
 
 const priorityColors: Record<TaskPriority, string> = {
@@ -38,24 +38,24 @@ export function TaskStatistics({ statistics }: TaskStatisticsProps) {
     return (
         <Card className="w-full">
             <CardHeader>
-                <CardTitle>Estadísticas de Tareas</CardTitle>
+                <CardTitle>Task Statistics</CardTitle>
             </CardHeader>
             <CardContent>
                 <div className="grid gap-4">
                     <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium">Total de Tareas</span>
+                        <span className="text-sm font-medium">Total Tasks</span>
                         <span className="text-sm">{statistics.totalTasks}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium">Tareas Completadas</span>
+                        <span className="text-sm font-medium">Completed Tasks</span>
                         <span className="text-sm">{statistics.completedTasks}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium">Tasa de Completado</span>
+                        <span className="text-sm font-medium">Completion Rate</span>
                         <span className="text-sm">{completionRate}%</span>
                     </div>
                     <div className="border-t pt-4">
-                        <h4 className="text-sm font-medium mb-2">Tareas por Prioridad</h4>
+                        <h4 className="text-sm font-medium mb-2">Tasks by Priority</h4>
                         <div className="space-y-2">
                             {(Object.keys(statistics.tasksByPriority) as TaskPriority[]).map(
                                 (priority) => (

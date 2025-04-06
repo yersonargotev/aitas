@@ -145,7 +145,7 @@ export function TaskForm({ onSubmit, trigger }: TaskFormProps) {
                                                     <RadioGroupItem value="urgent" />
                                                 </FormControl>
                                                 <FormLabel className="font-normal text-red-600 dark:text-red-400">
-                                                    Urgente e Importante
+                                                    <span className="text-xs">Urgent and Important</span>
                                                 </FormLabel>
                                             </FormItem>
                                             <FormItem className="flex items-center space-x-3 space-y-0">
@@ -153,7 +153,7 @@ export function TaskForm({ onSubmit, trigger }: TaskFormProps) {
                                                     <RadioGroupItem value="important" />
                                                 </FormControl>
                                                 <FormLabel className="font-normal text-blue-600 dark:text-blue-400">
-                                                    Importante, no urgente
+                                                    <span className="text-xs">Important, not urgent</span>
                                                 </FormLabel>
                                             </FormItem>
                                             <FormItem className="flex items-center space-x-3 space-y-0">
@@ -161,7 +161,7 @@ export function TaskForm({ onSubmit, trigger }: TaskFormProps) {
                                                     <RadioGroupItem value="delegate" />
                                                 </FormControl>
                                                 <FormLabel className="font-normal text-yellow-600 dark:text-yellow-400">
-                                                    Urgente, no importante
+                                                    <span className="text-xs">Urgent, not important</span>
                                                 </FormLabel>
                                             </FormItem>
                                             <FormItem className="flex items-center space-x-3 space-y-0">
@@ -169,7 +169,7 @@ export function TaskForm({ onSubmit, trigger }: TaskFormProps) {
                                                     <RadioGroupItem value="eliminate" />
                                                 </FormControl>
                                                 <FormLabel className="font-normal text-gray-600 dark:text-gray-400">
-                                                    Ni urgente ni importante
+                                                    <span className="text-xs">Neither urgent nor important</span>
                                                 </FormLabel>
                                             </FormItem>
                                             <FormItem className="flex items-center space-x-3 space-y-0">
@@ -177,13 +177,15 @@ export function TaskForm({ onSubmit, trigger }: TaskFormProps) {
                                                     <RadioGroupItem value="unclassified" />
                                                 </FormControl>
                                                 <FormLabel className="font-normal">
-                                                    Sin clasificar
+                                                    <span className="text-xs">Unclassified</span>
                                                 </FormLabel>
                                             </FormItem>
                                         </RadioGroup>
                                     </FormControl>
                                     <FormDescription>
-                                        Clasifica la tarea según su importancia y urgencia
+                                        <span className="text-xs">
+                                            Classify the task based on its importance and urgency
+                                        </span>
                                     </FormDescription>
                                     <FormMessage />
                                 </FormItem>
@@ -191,7 +193,7 @@ export function TaskForm({ onSubmit, trigger }: TaskFormProps) {
                         />
 
                         <DialogFooter>
-                            <Button type="submit">Guardar Tarea</Button>
+                            <Button type="submit">Save Task</Button>
                         </DialogFooter>
                     </form>
                 </Form>

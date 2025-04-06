@@ -23,18 +23,18 @@ interface TaskFiltersProps {
 }
 
 const priorityOptions: { value: TaskPriority | "all"; label: string }[] = [
-    { value: "all", label: "Todas las prioridades" },
-    { value: "urgent", label: "Urgente" },
-    { value: "important", label: "Importante" },
-    { value: "delegate", label: "Delegar" },
-    { value: "eliminate", label: "Eliminar" },
-    { value: "unclassified", label: "Sin clasificar" },
+    { value: "all", label: "All Priorities" },
+    { value: "urgent", label: "Urgent" },
+    { value: "important", label: "Important" },
+    { value: "delegate", label: "Delegate" },
+    { value: "eliminate", label: "Eliminate" },
+    { value: "unclassified", label: "Unclassified" },
 ];
 
 const statusOptions = [
-    { value: "all", label: "Todas las tareas" },
-    { value: "pending", label: "Pendientes" },
-    { value: "completed", label: "Completadas" },
+    { value: "all", label: "All Tasks" },
+    { value: "pending", label: "Pending" },
+    { value: "completed", label: "Completed" },
 ];
 
 export function TaskFilters({ filters, onFilterChange }: TaskFiltersProps) {

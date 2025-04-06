@@ -39,11 +39,11 @@ const priorityColors = {
 };
 
 const priorityLabels: Record<TaskPriority, string> = {
-    urgent: "Urgente",
-    important: "Importante",
-    delegate: "Delegar",
-    eliminate: "Eliminar",
-    unclassified: "Sin clasificar",
+    urgent: "Urgent",
+    important: "Important",
+    delegate: "Delegate",
+    eliminate: "Eliminate",
+    unclassified: "Unclassified",
 };
 
 export function TaskCard({
