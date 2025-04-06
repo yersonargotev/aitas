@@ -9,7 +9,6 @@ import type {
 } from "@dnd-kit/core";
 import { useState } from "react";
 import { ActionButton } from "./action-button";
-import { AIClassifier } from "./ai-classifier";
 import { DndContextProvider } from "./dnd-context-provider";
 import { DroppableZone } from "./droppable-zone";
 import { TaskCard } from "./task-card";
