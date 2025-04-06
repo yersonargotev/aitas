@@ -8,6 +8,12 @@ import { TaskCard } from "@/components/eisenhower/task-card";
 import { TaskFilters } from "@/components/eisenhower/task-filters";
 import { TaskForm } from "@/components/eisenhower/task-form";
 import { TaskStatistics } from "@/components/eisenhower/task-statistics";
+import {
+    Accordion,
+    AccordionContent,
+    AccordionItem,
+    AccordionTrigger
+} from "@/components/ui/accordion";
 import { useTaskStore } from "@/lib/stores/task-store";
 import type { TaskPriority } from "@/lib/stores/types";
 import type {
@@ -15,6 +21,7 @@ import type {
     DragOverEvent,
     DragStartEvent,
 } from "@dnd-kit/core";
+import { CheckCircle2 } from "lucide-react";
 import { useState } from "react";
 
 interface Task {
@@ -103,13 +110,19 @@ export function Matrix() {
         return true;
     });
 
-    // Group tasks by priority
+    // Separate completed and active tasks
+    const completedTasks = filteredTasks.filter(task => task.completed);
+    const activeTasks = filteredTasks.filter(task => !task.completed);
+    console.log("activeTasks", activeTasks);
+    console.log("completedTasks", completedTasks);
+
+    // Group active tasks by priority
     const tasksByPriority = {
-        urgent: filteredTasks.filter((task) => task.priority === "urgent"),
-        important: filteredTasks.filter((task) => task.priority === "important"),
-        delegate: filteredTasks.filter((task) => task.priority === "delegate"),
-        eliminate: filteredTasks.filter((task) => task.priority === "eliminate"),
-        unclassified: filteredTasks.filter(
+        urgent: activeTasks.filter((task) => task.priority === "urgent"),
+        important: activeTasks.filter((task) => task.priority === "important"),
+        delegate: activeTasks.filter((task) => task.priority === "delegate"),
+        eliminate: activeTasks.filter((task) => task.priority === "eliminate"),
+        unclassified: activeTasks.filter(
             (task) => task.priority === "unclassified",
         ),
     };
@@ -162,6 +175,53 @@ export function Matrix() {
                     ))}
                 </div>
             </DndContextProvider>
+
+            {/* Completed Tasks Accordion */}
+            {completedTasks.length > 0 && (
+                <Accordion type="single" collapsible className="w-full">
+                    <AccordionItem value="completed-tasks">
+                        <AccordionTrigger className="flex items-center gap-2">
+                            <CheckCircle2 className="h-5 w-5 text-green-500" />
+                            <span>Completed Tasks ({completedTasks.length})</span>
+                        </AccordionTrigger>
+                        <AccordionContent>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pt-4">
+                                {Object.entries(tasksByPriority).map(([priority, _]) => {
+                                    const priorityCompletedTasks = completedTasks.filter(
+                                        task => task.priority === priority
+                                    );
+
+                                    if (priorityCompletedTasks.length === 0) return null;
+
+                                    return (
+                                        <div key={`completed-${priority}`} className="space-y-4">
+                                            <div className="flex items-center justify-between">
+                                                <h3 className="text-md font-medium capitalize">
+                                                    {priority}
+                                                </h3>
+                                                <span className="text-sm text-muted-foreground">
+                                                    {priorityCompletedTasks.length} tasks
+                                                </span>
+                                            </div>
+                                            <div className="space-y-2">
+                                                {priorityCompletedTasks.map((task) => (
+                                                    <TaskCard
+                                                        key={task.id}
+                                                        {...task}
+                                                        onEdit={(updates) => handleTaskEdit(task.id, updates)}
+                                                        onDelete={() => handleTaskDelete(task.id)}
+                                                        onToggleComplete={() => toggleTaskCompletion(task.id)}
+                                                    />
+                                                ))}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </AccordionContent>
+                    </AccordionItem>
+                </Accordion>
+            )}
 
             <div className="flex gap-2">
                 <TaskForm
