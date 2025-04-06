@@ -1,0 +1,7 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+- use sonner for toast notifications
+- never update or change the @/components/ui/* components, only use
