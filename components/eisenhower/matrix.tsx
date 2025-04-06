@@ -1,5 +1,12 @@
 "use client";
 
+import { ActionButton } from "@/components/eisenhower/action-button";
+import { DndContextProvider } from "@/components/eisenhower/dnd-context-provider";
+import { DroppableZone } from "@/components/eisenhower/droppable-zone";
+import { TaskCard } from "@/components/eisenhower/task-card";
+import { TaskFilters } from "@/components/eisenhower/task-filters";
+import { TaskForm } from "@/components/eisenhower/task-form";
+import { TaskStatistics } from "@/components/eisenhower/task-statistics";
 import { useTaskStore } from "@/lib/stores/task-store";
 import type { TaskPriority } from "@/lib/stores/types";
 import type {
@@ -8,13 +15,6 @@ import type {
     DragStartEvent,
 } from "@dnd-kit/core";
 import { useState } from "react";
-import { ActionButton } from "./action-button";
-import { DndContextProvider } from "./dnd-context-provider";
-import { DroppableZone } from "./droppable-zone";
-import { TaskCard } from "./task-card";
-import { TaskFilters } from "./task-filters";
-import { TaskForm } from "./task-form";
-import { TaskStatistics } from "./task-statistics";
 
 interface Task {
     id: string;

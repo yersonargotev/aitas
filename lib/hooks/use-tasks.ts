@@ -1,8 +1,7 @@
 "use client";
 
-import { useTaskStore } from "../stores/task-store";
-import { Task, TaskPriority } from "../stores/types";
-import { useStoreHydration } from "./use-store-hydration";
+import { useStoreHydration } from "@/lib/hooks/use-store-hydration";
+import { useTaskStore } from "@/lib/stores/task-store";
 
 /**
  * Custom hook to use the task store with proper hydration

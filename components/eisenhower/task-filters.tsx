@@ -1,6 +1,5 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
 import {
     Select,
     SelectContent,
@@ -9,7 +8,6 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import type { TaskPriority } from "@/lib/stores/types";
-import { cn } from "@/lib/utils";
 
 interface TaskFiltersProps {
     filters: {
