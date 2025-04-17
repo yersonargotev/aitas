@@ -2,6 +2,7 @@
 
 import { ActionButton } from "@/components/eisenhower/action-button";
 import { GoalInput } from "@/components/eisenhower/goal-input";
+import { useProjectStore } from "@/lib/stores/project-store";
 import { useTaskStore } from "@/lib/stores/task-store";
 import type { TaskPriority } from "@/lib/stores/types";
 import { Loader2, Sparkle } from "lucide-react";
@@ -10,15 +11,19 @@ import { toast } from "sonner";
 
 export function AIClassifyButton() {
     const { tasks, moveTask, setError, clearError } = useTaskStore();
+    const { selectedProjectId } = useProjectStore();
     const [isClassifying, setIsClassifying] = useState(false);
     const [goal, setGoal] = useState("");
 
-    // Get unclassified tasks
-    const unclassifiedTasks = tasks.filter(task => task.priority === "unclassified");
+    // Get unclassified tasks from the current project only
+    const unclassifiedTasks = tasks.filter(
+        task => task.priority === "unclassified" &&
+            (selectedProjectId ? task.projectId === selectedProjectId : !task.projectId)
+    );
 
     const handleClassify = async () => {
         if (unclassifiedTasks.length === 0) {
-            toast.info("No unclassified tasks to classify");
+            toast.info("No unclassified tasks to classify in the current project");
             return;
         }
 
@@ -42,7 +47,8 @@ export function AIClassifyButton() {
                 },
                 body: JSON.stringify({
                     tasks: tasksToClassify,
-                    goal: goal
+                    goal: goal,
+                    projectId: selectedProjectId
                 }),
             });
 
