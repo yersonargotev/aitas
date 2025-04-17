@@ -19,11 +19,12 @@ import {
 import { useProjectStore } from "@/lib/stores/project-store";
 import { useTaskStore } from "@/lib/stores/task-store";
 import type { TaskPriority } from "@/lib/stores/types";
+import { cn } from "@/lib/utils";
 import type {
     DragEndEvent,
     DragOverEvent,
 } from "@dnd-kit/core";
-import { CheckCircle2 } from "lucide-react";
+import { AlertTriangle, CheckCircle2, CircleDot, Trash2 } from "lucide-react";
 
 interface Task {
     id: string;
@@ -34,6 +35,40 @@ interface Task {
     dueDate?: Date;
     completed?: boolean;
 }
+
+// Priority color and icon mapping
+const priorityConfig: Record<TaskPriority, { color: string, bgColor: string, icon: React.ReactNode, label: string }> = {
+    urgent: {
+        color: "text-red-600",
+        bgColor: "bg-red-50 dark:bg-red-950/30",
+        icon: <AlertTriangle className="h-4 w-4 text-red-600" />,
+        label: "Do First"
+    },
+    important: {
+        color: "text-blue-600",
+        bgColor: "bg-blue-50 dark:bg-blue-950/30",
+        icon: <CircleDot className="h-4 w-4 text-blue-600" />,
+        label: "Schedule"
+    },
+    delegate: {
+        color: "text-amber-600",
+        bgColor: "bg-amber-50 dark:bg-amber-950/30",
+        icon: <CircleDot className="h-4 w-4 text-amber-600" />,
+        label: "Delegate"
+    },
+    eliminate: {
+        color: "text-gray-600",
+        bgColor: "bg-gray-50 dark:bg-gray-900/50",
+        icon: <Trash2 className="h-4 w-4 text-gray-600" />,
+        label: "Eliminate"
+    },
+    unclassified: {
+        color: "text-purple-600",
+        bgColor: "bg-purple-50 dark:bg-purple-950/30",
+        icon: <CircleDot className="h-4 w-4 text-purple-600" />,
+        label: "Unclassified"
+    }
+};
 
 export function Matrix() {
     const {
@@ -190,49 +225,106 @@ export function Matrix() {
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    {Object.entries(tasksByPriority).map(([priority, tasks]) => (
-                        <DroppableZone
-                            key={priority}
-                            id={priority}
-                            className="min-h-[200px] h-full"
-                        >
-                            <div className="flex flex-col h-full">
-                                <div className="flex items-center justify-between mb-4">
-                                    <h2 className="text-lg font-semibold capitalize">
-                                        {priority}
-                                    </h2>
-                                    <span className="text-sm text-muted-foreground">
-                                        {tasks.length} tasks
-                                    </span>
-                                </div>
-                                <div className="flex-1 flex flex-col gap-3">
-                                    {tasks.map((task) => (
-                                        <TaskCard
-                                            key={task.id}
-                                            {...task}
-                                            onEdit={(updates) => handleTaskEdit(task.id, updates)}
-                                            onDelete={() => handleTaskDelete(task.id)}
-                                            onToggleComplete={() => toggleTaskCompletion(task.id)}
-                                        />
-                                    ))}
+                {/* Matrix header grid layout */}
+                <div className="relative">
+                    {/* Horizontal labels (Urgent / Not Urgent) */}
+                    <div className="hidden md:flex justify-between px-10 lg:px-16 mb-2">
+                        <div className="w-1/2 text-center font-medium border-b-2 border-dashed pb-1">
+                            Urgent
+                        </div>
+                        <div className="w-1/2 text-center font-medium border-b-2 border-dashed pb-1">
+                            Not Urgent
+                        </div>
+                    </div>
+
+                    {/* Vertical labels (Important / Not Important) */}
+                    <div className="hidden lg:block absolute left-0 top-0 h-full">
+                        <div className="grid grid-rows-2 h-full">
+                            <div className="flex items-center justify-center pb-4 pl-4">
+                                <div className="transform -rotate-90 origin-bottom-left whitespace-nowrap absolute top-1/4 -translate-y-1/2 -left-5">
+                                    <span className="font-medium">Important</span>
                                 </div>
                             </div>
-                        </DroppableZone>
-                    ))}
+                            <div className="flex items-center justify-center pt-4 pl-4">
+                                <div className="transform -rotate-90 origin-bottom-left whitespace-nowrap absolute top-3/4 -translate-y-1/2 -left-5">
+                                    <span className="font-medium">Not Important</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Matrix grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-3 md:gap-4 lg:gap-5 lg:mx-12">
+                        {Object.entries(tasksByPriority).map(([priority, tasks], index) => {
+                            const config = priorityConfig[priority as TaskPriority];
+
+                            // Determine border positions based on index for the matrix layout
+                            let borderClasses = "";
+                            if (index === 0) { // urgent (top-left)
+                                borderClasses = "md:border-r md:border-b";
+                            } else if (index === 1) { // important (top-right)
+                                borderClasses = "md:border-b";
+                            } else if (index === 2) { // delegate (bottom-left)
+                                borderClasses = "md:border-r";
+                            }
+
+                            return (
+                                <DroppableZone
+                                    key={priority}
+                                    id={priority}
+                                    className={cn(
+                                        "min-h-[250px] h-full rounded-lg border",
+                                        `${borderClasses}`,
+                                        config.bgColor
+                                    )}
+                                >
+                                    <div className="flex flex-col h-full p-3 md:p-4">
+                                        <div className={cn(
+                                            "flex items-center justify-between mb-4 pb-2 border-b",
+                                            config.color
+                                        )}>
+                                            <div className="flex items-center gap-2 flex-wrap">
+                                                {config.icon}
+                                                <h2 className="text-lg font-semibold capitalize">
+                                                    {priority}
+                                                </h2>
+                                                <span className="text-xs font-normal text-muted-foreground whitespace-nowrap">
+                                                    ({config.label})
+                                                </span>
+                                            </div>
+                                            <span className="text-sm font-medium ml-1 flex-shrink-0">
+                                                {tasks.length}
+                                            </span>
+                                        </div>
+                                        <div className="flex-1 flex flex-col gap-3 overflow-y-auto">
+                                            {tasks.map((task) => (
+                                                <TaskCard
+                                                    key={task.id}
+                                                    {...task}
+                                                    onEdit={(updates) => handleTaskEdit(task.id, updates)}
+                                                    onDelete={() => handleTaskDelete(task.id)}
+                                                    onToggleComplete={() => toggleTaskCompletion(task.id)}
+                                                />
+                                            ))}
+                                        </div>
+                                    </div>
+                                </DroppableZone>
+                            );
+                        })}
+                    </div>
                 </div>
             </DndContextProvider>
 
             {/* Completed Tasks Accordion */}
             {completedTasks.length > 0 && (
-                <Accordion type="single" collapsible className="w-full">
+                <Accordion type="single" collapsible className="w-full mt-8">
                     <AccordionItem value="completed-tasks">
                         <AccordionTrigger className="flex items-center gap-2">
                             <CheckCircle2 className="h-5 w-5 text-green-500" />
                             <span>Completed Tasks ({completedTasks.length})</span>
                         </AccordionTrigger>
                         <AccordionContent>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 pt-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pt-4">
                                 {Object.entries(tasksByPriority).map(([priority]) => {
                                     const priorityCompletedTasks = completedTasks.filter(
                                         task => task.priority === priority
@@ -240,17 +332,31 @@ export function Matrix() {
 
                                     if (priorityCompletedTasks.length === 0) return null;
 
+                                    const config = priorityConfig[priority as TaskPriority];
+
                                     return (
-                                        <div key={`completed-${priority}`} className="flex flex-col gap-3">
-                                            <div className="flex items-center justify-between mb-2">
-                                                <h3 className="text-md font-medium capitalize">
-                                                    {priority}
-                                                </h3>
-                                                <span className="text-sm text-muted-foreground">
-                                                    {priorityCompletedTasks.length} tasks
+                                        <div
+                                            key={`completed-${priority}`}
+                                            className={cn(
+                                                "flex flex-col gap-3 rounded-lg border p-3",
+                                                config.bgColor
+                                            )}
+                                        >
+                                            <div className={cn(
+                                                "flex items-center justify-between pb-2 border-b",
+                                                config.color
+                                            )}>
+                                                <div className="flex items-center gap-2 flex-wrap">
+                                                    {config.icon}
+                                                    <h3 className="text-md font-medium capitalize">
+                                                        {priority}
+                                                    </h3>
+                                                </div>
+                                                <span className="text-sm text-muted-foreground flex-shrink-0">
+                                                    {priorityCompletedTasks.length}
                                                 </span>
                                             </div>
-                                            <div className="flex flex-col gap-3">
+                                            <div className="flex flex-col gap-3 overflow-y-auto max-h-[300px]">
                                                 {priorityCompletedTasks.map((task) => (
                                                     <TaskCard
                                                         key={task.id}
