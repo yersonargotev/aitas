@@ -79,11 +79,11 @@ export function AIClassifyButton() {
     };
 
     return (
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
             <ActionButton
                 onClick={handleClassify}
                 disabled={isClassifying || unclassifiedTasks.length === 0}
-                className="flex items-center gap-2"
+                className="flex items-center justify-center gap-2 w-full sm:w-auto"
             >
                 <Sparkle className="h-4 w-4 animate-pulse transition-all duration-300" />
                 {isClassifying && <Loader2 className="h-4 w-4 animate-spin" />}
@@ -91,7 +91,7 @@ export function AIClassifyButton() {
             </ActionButton>
             <GoalInput
                 onGoalChange={setGoal}
-                className="w-64"
+                className="w-full sm:w-64"
             />
         </div>
     );

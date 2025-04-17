@@ -18,13 +18,14 @@ export function GoalInput({ onGoalChange, className }: GoalInputProps) {
     };
 
     return (
-        <div className={`relative ${className}`}>
+        <div className={`relative w-full ${className}`}>
             <Input
                 type="text"
                 placeholder="Enter your goal (optional)"
                 value={goal}
                 onChange={handleGoalChange}
-                className="w-full"
+                className="w-full text-sm"
+                aria-label="Task goal"
             />
         </div>
     );

@@ -154,19 +154,23 @@ export function Matrix() {
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between flex-wrap gap-4">
-                <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="w-full sm:w-auto">
                     <TaskForm
                         onSubmit={handleTaskCreate}
                         trigger={
-                            <ActionButton>
+                            <ActionButton className="w-full sm:w-auto">
                                 New Task
                             </ActionButton>
                         }
                     />
+                </div>
+                <div className="w-full sm:w-auto">
                     <AIClassifyButton />
                 </div>
-                <ProjectSelector />
+                <div className="mt-3 sm:mt-0">
+                    <ProjectSelector />
+                </div>
             </div>
 
             <DndContextProvider
