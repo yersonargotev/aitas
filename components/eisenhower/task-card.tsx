@@ -26,6 +26,8 @@ import { CSS } from "@dnd-kit/utilities";
 import { AnimatePresence, motion } from "framer-motion";
 import { Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 interface TaskCardProps {
     id: string;
@@ -230,16 +232,38 @@ export function TaskCard({
                     <>
                         {description && (
                             <CardContent className="pb-2">
-                                <p
-                                    className={cn(
-                                        "text-sm text-muted-foreground line-clamp-3 break-words",
-                                        {
-                                            "line-through": completed,
-                                        }
-                                    )}
+                                <ReactMarkdown
+                                    remarkPlugins={[remarkGfm]}
+                                    components={{
+                                        p: ({ children }) => (
+                                            <p className={cn(
+                                                "text-sm text-muted-foreground break-words my-1",
+                                                { "line-through": completed }
+                                            )}>
+                                                {children}
+                                            </p>
+                                        ),
+                                        a: ({ href, children }) => (
+                                            <a
+                                                href={href}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="text-primary underline"
+                                            >
+                                                {children}
+                                            </a>
+                                        ),
+                                        ul: ({ children }) => <ul className="list-disc pl-5 my-1">{children}</ul>,
+                                        ol: ({ children }) => <ol className="list-decimal pl-5 my-1">{children}</ol>,
+                                        li: ({ children }) => <li className="text-sm">{children}</li>,
+                                        h1: ({ children }) => <h1 className="text-base font-bold mt-2 mb-1">{children}</h1>,
+                                        h2: ({ children }) => <h2 className="text-sm font-bold mt-2 mb-1">{children}</h2>,
+                                        h3: ({ children }) => <h3 className="text-sm font-semibold mt-2 mb-1">{children}</h3>,
+                                        code: ({ children }) => <code className="bg-muted px-1 py-0.5 rounded text-xs">{children}</code>,
+                                    }}
                                 >
                                     {description}
-                                </p>
+                                </ReactMarkdown>
                             </CardContent>
                         )}
                         {dueDate && (
