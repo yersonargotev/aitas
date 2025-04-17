@@ -43,7 +43,7 @@ export function NavProjects() {
   // Handle project selection
   const handleProjectSelect = (projectId: string) => {
     selectProject(projectId)
-    // @ts-ignore - we've extended the types but TypeScript doesn't recognize it yet
+    // @ts-expect-error - we've extended the types but TypeScript doesn't recognize it yet
     setFilter("projectId", projectId)
     router.push("/")
   }
@@ -53,7 +53,7 @@ export function NavProjects() {
     deleteProject(projectId)
     // If the deleted project was selected, clear the filter
     if (selectedProjectId === projectId) {
-      // @ts-ignore - we've extended the types but TypeScript doesn't recognize it yet
+      // @ts-expect-error - we've extended the types but TypeScript doesn't recognize it yet
       setFilter("projectId", undefined)
     }
   }

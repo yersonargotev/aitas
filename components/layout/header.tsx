@@ -11,22 +11,18 @@ import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
 import Link from "next/link";
 
-type SidebarContextType = ReturnType<typeof useSidebar> | undefined;
-
 export function Header({ showSidebarTrigger = false }: { showSidebarTrigger?: boolean }) {
-    // Safely try to use the sidebar context if available
-    let sidebarContext: SidebarContextType;
-    try {
-        sidebarContext = useSidebar();
-    } catch (error) {
-        // If the context is not available, sidebarContext will remain undefined
-    }
+    // Always call useSidebar at the top level
+    const sidebarContext = useSidebar();
+
+    // Only use the sidebar context if showSidebarTrigger is true
+    const shouldShowSidebarControls = showSidebarTrigger && sidebarContext;
 
     return (
         <header className="border-b">
             <div className="container mx-auto p-4 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                    {showSidebarTrigger && sidebarContext && (
+                    {shouldShowSidebarControls && (
                         <>
                             <SidebarTrigger className="-ml-1" />
                             <Separator

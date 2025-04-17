@@ -24,7 +24,7 @@ export function ProjectSelector() {
 
     const handleProjectSelect = (projectId: string | null) => {
         selectProject(projectId);
-        // @ts-ignore - we've extended the types but TypeScript doesn't recognize it yet
+        // @ts-expect-error - we've extended the types but TypeScript doesn't recognize it yet
         setFilter("projectId", projectId === null ? undefined : projectId);
     };
 

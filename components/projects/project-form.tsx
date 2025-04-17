@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Plus, SquareUser, X } from "lucide-react";
+import { Plus, X } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
