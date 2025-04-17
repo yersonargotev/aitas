@@ -24,7 +24,7 @@ import { cn } from "@/lib/utils";
 import { useDraggable, useDroppable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import { AnimatePresence, motion } from "framer-motion";
-import { Pencil, Trash2 } from "lucide-react";
+import { Calendar, Clock, Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -44,13 +44,31 @@ interface TaskCardProps {
 }
 
 const priorityColors = {
-    urgent: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100",
-    important: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100",
-    delegate:
-        "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100",
-    eliminate: "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-100",
-    unclassified:
-        "bg-slate-100 text-slate-800 dark:bg-slate-900 dark:text-slate-100",
+    urgent: {
+        badge: "bg-red-100 text-red-800 dark:bg-red-900/60 dark:text-red-200",
+        border: "border-red-200 dark:border-red-900",
+        accent: "bg-red-50 dark:bg-red-950/30",
+    },
+    important: {
+        badge: "bg-blue-100 text-blue-800 dark:bg-blue-900/60 dark:text-blue-200",
+        border: "border-blue-200 dark:border-blue-900",
+        accent: "bg-blue-50 dark:bg-blue-950/30",
+    },
+    delegate: {
+        badge: "bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-200",
+        border: "border-amber-200 dark:border-amber-900",
+        accent: "bg-amber-50 dark:bg-amber-950/30",
+    },
+    eliminate: {
+        badge: "bg-gray-100 text-gray-800 dark:bg-gray-800/60 dark:text-gray-300",
+        border: "border-gray-200 dark:border-gray-800",
+        accent: "bg-gray-50 dark:bg-gray-900/50",
+    },
+    unclassified: {
+        badge: "bg-purple-100 text-purple-800 dark:bg-purple-900/60 dark:text-purple-200",
+        border: "border-purple-200 dark:border-purple-900",
+        accent: "bg-purple-50 dark:bg-purple-950/30",
+    }
 };
 
 const priorityLabels: Record<TaskPriority, string> = {
@@ -138,6 +156,34 @@ export function TaskCard({
         }
     };
 
+    const formatDueDate = (date: Date) => {
+        // Check if the date is today
+        const today = new Date();
+        const isToday = date.toDateString() === today.toDateString();
+
+        // Check if the date is tomorrow
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const isTomorrow = date.toDateString() === tomorrow.toDateString();
+
+        // Format date based on proximity
+        if (isToday) {
+            return "Today";
+        }
+
+        if (isTomorrow) {
+            return "Tomorrow";
+        }
+
+        return date.toLocaleDateString(undefined, {
+            month: "short",
+            day: "numeric",
+            year: date.getFullYear() !== today.getFullYear() ? "numeric" : undefined
+        });
+    };
+
+    const isOverdue = dueDate && new Date(dueDate) < new Date() && !completed;
+
     return (
         <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -151,32 +197,68 @@ export function TaskCard({
                 style={style}
                 {...(isEditing ? {} : { ...attributes, ...listeners })}
                 className={cn(
-                    "relative group transition-all duration-200 hover:shadow-md h-full",
+                    "relative group transition-all duration-200 overflow-visible border",
+                    priorityColors[priority].border,
                     {
-                        "opacity-50": completed,
-                        "border-green-200 dark:border-green-800": completed,
-                        "ring-1 ring-primary/10": isHovered && !isEditing,
+                        "shadow-sm": !isHovered && !isEditing,
+                        "shadow-md": isHovered && !isEditing,
+                        "shadow-lg": isEditing,
+                        "opacity-60 bg-muted/30": completed,
+                        "border-green-300 dark:border-green-800": completed,
+                        "ring-1 ring-primary/20": isHovered && !isEditing,
                         "ring-2 ring-primary ring-offset-2": isOver,
-                        "bg-primary/5": isOver,
+                        [priorityColors[priority].accent]: !completed,
                     },
                     className,
                 )}
                 onMouseEnter={() => setIsHovered(true)}
                 onMouseLeave={() => setIsHovered(false)}
             >
-                <CardHeader className="px-4 py-3">
-                    <div className="flex flex-col items-start gap-2 relative pr-8 sm:pr-2">
-                        <Badge
-                            variant="secondary"
-                            className={cn("shrink-0 whitespace-nowrap", priorityColors[priority])}
-                        >
-                            {priorityLabels[priority]}
-                        </Badge>
-                        <div className="flex items-start sm:items-center gap-2 w-full">
+                {/* Priority indicator strip */}
+                <div className={cn(
+                    "absolute top-0 left-0 w-1 h-full rounded-l-md",
+                    priorityColors[priority].badge.replace("bg-", "").split(" ")[0],
+                    completed ? "opacity-30" : ""
+                )} />
+
+                <CardHeader className={cn(
+                    "px-4 py-3 pb-2 flex flex-col gap-2 rounded-t-lg",
+                    isEditing ? "bg-background" : ""
+                )}>
+                    <div className="flex flex-col items-start gap-2 relative pr-10 sm:pr-6">
+                        <div className="flex items-center justify-between w-full">
+                            <Badge
+                                variant="secondary"
+                                className={cn(
+                                    "shrink-0 whitespace-nowrap text-xs font-medium",
+                                    priorityColors[priority].badge,
+                                    completed ? "opacity-70" : ""
+                                )}
+                            >
+                                {priorityLabels[priority]}
+                            </Badge>
+
+                            {dueDate && !isEditing && (
+                                <div className={cn(
+                                    "flex items-center gap-1 text-xs",
+                                    isOverdue ? "text-red-500 dark:text-red-400" : "text-muted-foreground",
+                                    completed ? "line-through opacity-70" : ""
+                                )}>
+                                    <Calendar className="h-3 w-3" />
+                                    <span>{formatDueDate(new Date(dueDate))}</span>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="flex items-start gap-2 w-full">
                             <Checkbox
                                 checked={completed}
                                 onCheckedChange={onToggleComplete}
-                                className={cn("mt-1.5 sm:mt-0 shrink-0", isEditing && "hidden")}
+                                className={cn(
+                                    "mt-1 shrink-0",
+                                    isEditing && "hidden",
+                                    completed ? "opacity-100" : "opacity-90"
+                                )}
                                 aria-hidden={isEditing}
                             />
                             {isEditing ? (
@@ -184,15 +266,19 @@ export function TaskCard({
                                     value={editedTitle}
                                     onChange={(e) => setEditedTitle(e.target.value)}
                                     onKeyDown={handleKeyDown}
-                                    className="font-semibold w-full"
+                                    className="font-medium text-base w-full"
                                     autoFocus
                                 />
                             ) : (
                                 <div className="min-w-0 flex-1">
                                     <h3
-                                        className={cn("font-semibold leading-normal tracking-tight line-clamp-2", {
-                                            "line-through text-muted-foreground": completed,
-                                        })}
+                                        className={cn(
+                                            "font-medium text-base leading-normal tracking-tight",
+                                            "transition-colors duration-200",
+                                            {
+                                                "line-through text-muted-foreground": completed,
+                                            }
+                                        )}
                                     >
                                         {title}
                                     </h3>
@@ -201,14 +287,15 @@ export function TaskCard({
                         </div>
                     </div>
                 </CardHeader>
+
                 {isEditing ? (
-                    <CardContent className="pb-2 space-y-4">
+                    <CardContent className="p-3 pt-0 space-y-4">
                         <Textarea
                             value={editedDescription}
                             onChange={(e) => setEditedDescription(e.target.value)}
                             onKeyDown={handleKeyDown}
-                            placeholder="Add a description..."
-                            className="min-h-[80px] resize-none w-full"
+                            placeholder="Add a description... (Supports Markdown)"
+                            className="min-h-[80px] resize-none w-full mt-2"
                         />
                         <div className="flex justify-end gap-2">
                             <Button
@@ -231,12 +318,13 @@ export function TaskCard({
                 ) : (
                     <>
                         {description && (
-                            <CardContent className="pb-2">
+                            <CardContent className="p-3 pt-0">
                                 <div className={cn(
                                     "prose prose-sm dark:prose-invert max-w-none",
                                     "prose-a:text-primary prose-a:no-underline hover:prose-a:underline",
-                                    "prose-p:my-1 prose-headings:mt-2 prose-headings:mb-1",
-                                    { "text-muted-foreground line-through": completed }
+                                    "prose-p:my-1.5 prose-headings:mt-2 prose-headings:mb-1",
+                                    "text-sm",
+                                    { "text-muted-foreground line-through opacity-80": completed }
                                 )}>
                                     <ReactMarkdown
                                         remarkPlugins={[remarkGfm]}
@@ -246,11 +334,31 @@ export function TaskCard({
                                                     href={href}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
+                                                    className="underline-offset-2"
                                                 >
                                                     {children}
                                                 </a>
                                             ),
-                                            code: ({ children }) => <code className="bg-muted px-1 py-0.5 rounded text-xs">{children}</code>,
+                                            code: ({ children }) => (
+                                                <code className="bg-muted px-1 py-0.5 rounded text-xs">
+                                                    {children}
+                                                </code>
+                                            ),
+                                            ul: ({ children }) => (
+                                                <ul className="pl-5 list-disc space-y-1 my-2">
+                                                    {children}
+                                                </ul>
+                                            ),
+                                            ol: ({ children }) => (
+                                                <ol className="pl-5 list-decimal space-y-1 my-2">
+                                                    {children}
+                                                </ol>
+                                            ),
+                                            li: ({ children }) => (
+                                                <li className="my-0.5">
+                                                    {children}
+                                                </li>
+                                            ),
                                         }}
                                     >
                                         {description}
@@ -258,21 +366,15 @@ export function TaskCard({
                                 </div>
                             </CardContent>
                         )}
-                        {dueDate && (
-                            <CardContent className="pb-2">
-                                <p className="text-xs text-muted-foreground">
-                                    Due: {new Date(dueDate).toLocaleDateString()}
-                                </p>
-                            </CardContent>
-                        )}
                     </>
                 )}
+
                 <AnimatePresence>
                     {isHovered && !isEditing && (
                         <div
                             className={cn(
                                 "absolute top-2 flex gap-1",
-                                "right-2 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-200",
+                                "right-2 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-150",
                                 "bg-gradient-to-l from-background via-background to-transparent sm:bg-none",
                                 "pl-4 pr-0.5 py-0.5 -mr-0.5 sm:p-0"
                             )}
