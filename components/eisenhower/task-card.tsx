@@ -232,38 +232,30 @@ export function TaskCard({
                     <>
                         {description && (
                             <CardContent className="pb-2">
-                                <ReactMarkdown
-                                    remarkPlugins={[remarkGfm]}
-                                    components={{
-                                        p: ({ children }) => (
-                                            <p className={cn(
-                                                "text-sm text-muted-foreground break-words my-1",
-                                                { "line-through": completed }
-                                            )}>
-                                                {children}
-                                            </p>
-                                        ),
-                                        a: ({ href, children }) => (
-                                            <a
-                                                href={href}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="text-primary underline"
-                                            >
-                                                {children}
-                                            </a>
-                                        ),
-                                        ul: ({ children }) => <ul className="list-disc pl-5 my-1">{children}</ul>,
-                                        ol: ({ children }) => <ol className="list-decimal pl-5 my-1">{children}</ol>,
-                                        li: ({ children }) => <li className="text-sm">{children}</li>,
-                                        h1: ({ children }) => <h1 className="text-base font-bold mt-2 mb-1">{children}</h1>,
-                                        h2: ({ children }) => <h2 className="text-sm font-bold mt-2 mb-1">{children}</h2>,
-                                        h3: ({ children }) => <h3 className="text-sm font-semibold mt-2 mb-1">{children}</h3>,
-                                        code: ({ children }) => <code className="bg-muted px-1 py-0.5 rounded text-xs">{children}</code>,
-                                    }}
-                                >
-                                    {description}
-                                </ReactMarkdown>
+                                <div className={cn(
+                                    "prose prose-sm dark:prose-invert max-w-none",
+                                    "prose-a:text-primary prose-a:no-underline hover:prose-a:underline",
+                                    "prose-p:my-1 prose-headings:mt-2 prose-headings:mb-1",
+                                    { "text-muted-foreground line-through": completed }
+                                )}>
+                                    <ReactMarkdown
+                                        remarkPlugins={[remarkGfm]}
+                                        components={{
+                                            a: ({ href, children }) => (
+                                                <a
+                                                    href={href}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                >
+                                                    {children}
+                                                </a>
+                                            ),
+                                            code: ({ children }) => <code className="bg-muted px-1 py-0.5 rounded text-xs">{children}</code>,
+                                        }}
+                                    >
+                                        {description}
+                                    </ReactMarkdown>
+                                </div>
                             </CardContent>
                         )}
                         {dueDate && (
