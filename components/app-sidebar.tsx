@@ -6,7 +6,6 @@ import { NavProjects } from "@/components/nav-projects";
 import {
   Sidebar,
   SidebarContent,
-  SidebarHeader,
   SidebarRail,
 } from "@/components/ui/sidebar";
 
@@ -14,8 +13,6 @@ import {
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar collapsible="icon" {...props}>
-      <SidebarHeader>
-      </SidebarHeader>
       <SidebarContent>
         <NavProjects />
       </SidebarContent>
