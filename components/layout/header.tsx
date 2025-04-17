@@ -24,7 +24,7 @@ export function Header({ showSidebarTrigger = false }: { showSidebarTrigger?: bo
 
     return (
         <header className="border-b">
-            <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+            <div className="container mx-auto p-4 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                     {showSidebarTrigger && sidebarContext && (
                         <>
