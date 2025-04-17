@@ -14,6 +14,7 @@ const initialState = {
 	filters: {
 		priority: "all" as const,
 		status: "all" as const,
+		projectId: undefined as string | undefined,
 	},
 	statistics: {
 		totalTasks: 0,
@@ -239,8 +240,14 @@ export const useTaskStore = create<TaskState & TaskActions>()(
 
 			// Filter management
 			setFilter: (
-				filterType: "priority" | "status",
-				value: TaskPriority | "all" | "completed" | "pending",
+				filterType: "priority" | "status" | "projectId",
+				value:
+					| TaskPriority
+					| "all"
+					| "completed"
+					| "pending"
+					| string
+					| undefined,
 			) => {
 				set((state) => ({
 					filters: {

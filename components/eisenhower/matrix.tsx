@@ -4,6 +4,7 @@ import { ActionButton } from "@/components/eisenhower/action-button";
 import { AIClassifyButton } from "@/components/eisenhower/ai-classify-button";
 import { DndContextProvider } from "@/components/eisenhower/dnd-context-provider";
 import { DroppableZone } from "@/components/eisenhower/droppable-zone";
+import { ProjectSelector } from "@/components/eisenhower/project-selector";
 import { TaskCard } from "@/components/eisenhower/task-card";
 import { TaskFilters } from "@/components/eisenhower/task-filters";
 import { TaskForm } from "@/components/eisenhower/task-form";
@@ -15,6 +16,7 @@ import {
     AccordionItem,
     AccordionTrigger
 } from "@/components/ui/accordion";
+import { useProjectStore } from "@/lib/stores/project-store";
 import { useTaskStore } from "@/lib/stores/task-store";
 import type { TaskPriority } from "@/lib/stores/types";
 import type {
@@ -28,6 +30,7 @@ interface Task {
     title: string;
     description?: string;
     priority: TaskPriority;
+    projectId?: string;
     dueDate?: Date;
     completed?: boolean;
 }
@@ -46,6 +49,7 @@ export function Matrix() {
         reorderTasks,
     } = useTaskStore();
 
+    const { selectedProjectId } = useProjectStore();
 
     const handleDragOver = (event: DragOverEvent) => {
         const { active, over } = event;
@@ -72,7 +76,12 @@ export function Matrix() {
     };
 
     const handleTaskCreate = (task: Omit<Task, "id">) => {
-        addTask(task);
+        // Add project ID to the task if a project is selected
+        const taskWithProject = selectedProjectId
+            ? { ...task, projectId: selectedProjectId }
+            : task;
+
+        addTask(taskWithProject);
     };
 
     const handleTaskEdit = (taskId: string, updates?: { title?: string; description?: string }) => {
@@ -93,25 +102,32 @@ export function Matrix() {
         setFilter(filterType, value);
     };
 
-    // Filter tasks based on current filters
+    // Filter tasks based on current filters and selected project
     const filteredTasks = tasks.filter((task) => {
+        // Filter by project
+        if (selectedProjectId && task.projectId !== selectedProjectId) {
+            return false;
+        }
+
+        // Filter by priority
         if (filters.priority !== "all" && task.priority !== filters.priority) {
             return false;
         }
+
+        // Filter by status
         if (filters.status === "completed" && !task.completed) {
             return false;
         }
         if (filters.status === "pending" && task.completed) {
             return false;
         }
+
         return true;
     });
 
     // Separate completed and active tasks
     const completedTasks = filteredTasks.filter(task => task.completed);
     const activeTasks = filteredTasks.filter(task => !task.completed);
-    console.log("activeTasks", activeTasks);
-    console.log("completedTasks", completedTasks);
 
     // Group active tasks by priority
     const tasksByPriority = {
@@ -138,16 +154,19 @@ export function Matrix() {
 
     return (
         <div className="space-y-6">
-            <div className="flex gap-2">
-                <TaskForm
-                    onSubmit={handleTaskCreate}
-                    trigger={
-                        <ActionButton>
-                            New Task
-                        </ActionButton>
-                    }
-                />
-                <AIClassifyButton />
+            <div className="flex items-center justify-between flex-wrap gap-4">
+                <div className="flex gap-2">
+                    <TaskForm
+                        onSubmit={handleTaskCreate}
+                        trigger={
+                            <ActionButton>
+                                New Task
+                            </ActionButton>
+                        }
+                    />
+                    <AIClassifyButton />
+                </div>
+                <ProjectSelector />
             </div>
 
             <DndContextProvider
@@ -155,7 +174,7 @@ export function Matrix() {
                 onDragEnd={handleDragEnd}
             >
                 <UnclassifiedTasksSection
-                    tasks={tasks}
+                    tasks={filteredTasks}
                     onEdit={handleTaskEdit}
                     onDelete={handleTaskDelete}
                     onToggleComplete={toggleTaskCompletion}

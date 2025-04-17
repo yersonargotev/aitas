@@ -4,10 +4,11 @@ import {
   Folder,
   Forward,
   MoreHorizontal,
+  PlusCircle,
   Trash2,
-  type LucideIcon,
 } from "lucide-react"
 
+import { ProjectForm } from "@/components/projects/project-form"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,29 +25,62 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
+import { useProjectStore } from "@/lib/stores/project-store"
+import { useTaskStore } from "@/lib/stores/task-store"
+import { useRouter } from "next/navigation"
 
-export function NavProjects({
-  projects,
-}: {
-  projects: {
-    name: string
-    url: string
-    icon: LucideIcon
-  }[]
-}) {
+export function NavProjects() {
   const { isMobile } = useSidebar()
+  const router = useRouter()
+  const { projects, addProject, deleteProject, selectProject, selectedProjectId } = useProjectStore()
+  const { setFilter } = useTaskStore()
+
+  // Handle project creation
+  const handleProjectCreate = (project: { name: string; description?: string; icon?: string }) => {
+    addProject(project)
+  }
+
+  // Handle project selection
+  const handleProjectSelect = (projectId: string) => {
+    selectProject(projectId)
+    // @ts-ignore - we've extended the types but TypeScript doesn't recognize it yet
+    setFilter("projectId", projectId)
+    router.push("/dashboard")
+  }
+
+  // Handle project deletion
+  const handleProjectDelete = (projectId: string) => {
+    deleteProject(projectId)
+    // If the deleted project was selected, clear the filter
+    if (selectedProjectId === projectId) {
+      // @ts-ignore - we've extended the types but TypeScript doesn't recognize it yet
+      setFilter("projectId", undefined)
+    }
+  }
 
   return (
     <SidebarGroup className="group-data-[collapsible=icon]:hidden">
-      <SidebarGroupLabel>Projects</SidebarGroupLabel>
+      <div className="flex items-center justify-between px-3 py-2">
+        <SidebarGroupLabel>Projects</SidebarGroupLabel>
+        <ProjectForm
+          onSubmit={handleProjectCreate}
+          trigger={
+            <SidebarMenuAction>
+              <PlusCircle className="h-4 w-4" />
+              <span className="sr-only">New Project</span>
+            </SidebarMenuAction>
+          }
+        />
+      </div>
       <SidebarMenu>
-        {projects.map((item) => (
-          <SidebarMenuItem key={item.name}>
-            <SidebarMenuButton asChild>
-              <a href={item.url}>
-                <item.icon />
-                <span>{item.name}</span>
-              </a>
+        {projects.map((project) => (
+          <SidebarMenuItem key={project.id}>
+            <SidebarMenuButton
+              onClick={() => handleProjectSelect(project.id)}
+              className={selectedProjectId === project.id ? "bg-accent" : ""}
+            >
+              <Folder />
+              <span>{project.name}</span>
             </SidebarMenuButton>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -60,7 +94,7 @@ export function NavProjects({
                 side={isMobile ? "bottom" : "right"}
                 align={isMobile ? "end" : "start"}
               >
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleProjectSelect(project.id)}>
                   <Folder className="text-muted-foreground" />
                   <span>View Project</span>
                 </DropdownMenuItem>
@@ -69,7 +103,7 @@ export function NavProjects({
                   <span>Share Project</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleProjectDelete(project.id)}>
                   <Trash2 className="text-muted-foreground" />
                   <span>Delete Project</span>
                 </DropdownMenuItem>
@@ -77,12 +111,13 @@ export function NavProjects({
             </DropdownMenu>
           </SidebarMenuItem>
         ))}
-        <SidebarMenuItem>
-          <SidebarMenuButton className="text-sidebar-foreground/70">
-            <MoreHorizontal className="text-sidebar-foreground/70" />
-            <span>More</span>
-          </SidebarMenuButton>
-        </SidebarMenuItem>
+        {projects.length === 0 && (
+          <SidebarMenuItem>
+            <SidebarMenuButton className="text-sidebar-foreground/70">
+              <span>No projects yet</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        )}
       </SidebarMenu>
     </SidebarGroup>
   )

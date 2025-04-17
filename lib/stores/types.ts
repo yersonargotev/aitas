@@ -5,11 +5,21 @@ export type TaskPriority =
 	| "eliminate"
 	| "unclassified";
 
+export interface Project {
+	id: string;
+	name: string;
+	description?: string;
+	icon?: string;
+	createdAt: Date;
+	updatedAt: Date;
+}
+
 export interface Task {
 	id: string;
 	title: string;
 	description?: string;
 	priority: TaskPriority;
+	projectId?: string;
 	dueDate?: Date;
 	completed?: boolean;
 	createdAt: Date;
@@ -24,6 +34,7 @@ export interface TaskState {
 	filters: {
 		priority: TaskPriority | "all";
 		status: "all" | "completed" | "pending";
+		projectId?: string;
 	};
 	statistics: {
 		totalTasks: number;
