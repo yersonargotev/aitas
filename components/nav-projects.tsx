@@ -45,7 +45,7 @@ export function NavProjects() {
     selectProject(projectId)
     // @ts-ignore - we've extended the types but TypeScript doesn't recognize it yet
     setFilter("projectId", projectId)
-    router.push("/dashboard")
+    router.push("/")
   }
 
   // Handle project deletion
