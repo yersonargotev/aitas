@@ -79,7 +79,6 @@ export function Matrix() {
         deleteTask,
         moveTask,
         toggleTaskCompletion,
-        setFilter,
         reorderTasks,
     } = useTaskStore();
 
