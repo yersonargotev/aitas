@@ -6,7 +6,6 @@ import { DndContextProvider } from "@/components/eisenhower/dnd-context-provider
 import { DroppableZone } from "@/components/eisenhower/droppable-zone";
 import { ProjectSelector } from "@/components/eisenhower/project-selector";
 import { TaskCard } from "@/components/eisenhower/task-card";
-import { TaskFilters } from "@/components/eisenhower/task-filters";
 import { TaskForm } from "@/components/eisenhower/task-form";
 import { TaskStatistics } from "@/components/eisenhower/task-statistics";
 import { UnclassifiedTasksSection } from "@/components/eisenhower/unclassified-tasks-section";
@@ -218,12 +217,6 @@ export function Matrix() {
                     onDelete={handleTaskDelete}
                     onToggleComplete={toggleTaskCompletion}
                 />
-
-                <div className="flex flex-col gap-4">
-                    <div className="flex-1">
-                        <TaskFilters filters={filters} onFilterChange={handleFilterChange} />
-                    </div>
-                </div>
 
                 {/* Matrix header grid layout */}
                 <div className="relative">
