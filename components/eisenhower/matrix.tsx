@@ -129,13 +129,6 @@ export function Matrix() {
         deleteTask(taskId);
     };
 
-    const handleFilterChange = (
-        filterType: "priority" | "status",
-        value: TaskPriority | "all" | "completed" | "pending",
-    ) => {
-        setFilter(filterType, value);
-    };
-
     // Filter tasks based on current filters and selected project
     const filteredTasks = tasks.filter((task) => {
         // Filter by project
