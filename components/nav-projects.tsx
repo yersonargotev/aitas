@@ -9,6 +9,7 @@ import {
 } from "lucide-react"
 
 import { ProjectForm } from "@/components/projects/project-form"
+import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,12 +26,14 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { useProjectStore } from "@/lib/stores/project-store"
 import { useTaskStore } from "@/lib/stores/task-store"
+import { cn } from "@/lib/utils"
 import { useRouter } from "next/navigation"
 
 export function NavProjects() {
-  const { isMobile } = useSidebar()
+  const { isMobile, state } = useSidebar()
   const router = useRouter()
   const { projects, addProject, deleteProject, selectProject, selectedProjectId } = useProjectStore()
   const { setFilter } = useTaskStore()
@@ -58,67 +61,103 @@ export function NavProjects() {
     }
   }
 
+  const isCollapsed = state === "collapsed"
+
   return (
-    <SidebarGroup className="group-data-[collapsible=icon]:hidden">
-      <div className="flex items-center justify-between px-3 py-2">
-        <SidebarGroupLabel>Projects</SidebarGroupLabel>
-        <ProjectForm
-          onSubmit={handleProjectCreate}
-          trigger={
-            <SidebarMenuAction>
-              <PlusCircle className="h-4 w-4" />
-              <span className="sr-only">New Project</span>
-            </SidebarMenuAction>
-          }
-        />
+    <>
+      <div className={cn("mb-4 px-3", isCollapsed && "px-1")}>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div>
+                <ProjectForm
+                  onSubmit={handleProjectCreate}
+                  trigger={
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className={cn(
+                        "w-full justify-start gap-2 bg-background/50 hover:bg-background",
+                        isCollapsed && "justify-center p-2"
+                      )}
+                    >
+                      <PlusCircle className={cn("h-4 w-4 text-primary", isCollapsed && "h-5 w-5")} />
+                      <span className={cn("text-sm", isCollapsed && "hidden")}>New Project</span>
+                    </Button>
+                  }
+                />
+              </div>
+            </TooltipTrigger>
+            {isCollapsed && <TooltipContent side="right">New Project</TooltipContent>}
+          </Tooltip>
+        </TooltipProvider>
       </div>
-      <SidebarMenu>
-        {projects.map((project) => (
-          <SidebarMenuItem key={project.id}>
-            <SidebarMenuButton
-              onClick={() => handleProjectSelect(project.id)}
-              className={selectedProjectId === project.id ? "bg-accent" : ""}
-            >
-              <Folder />
-              <span>{project.name}</span>
-            </SidebarMenuButton>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <SidebarMenuAction showOnHover>
-                  <MoreHorizontal />
-                  <span className="sr-only">More</span>
-                </SidebarMenuAction>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                className="w-48 rounded-lg"
-                side={isMobile ? "bottom" : "right"}
-                align={isMobile ? "end" : "start"}
-              >
-                <DropdownMenuItem onClick={() => handleProjectSelect(project.id)}>
-                  <Folder className="text-muted-foreground" />
-                  <span>View Project</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <Forward className="text-muted-foreground" />
-                  <span>Share Project</span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => handleProjectDelete(project.id)}>
-                  <Trash2 className="text-muted-foreground" />
-                  <span>Delete Project</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </SidebarMenuItem>
-        ))}
-        {projects.length === 0 && (
-          <SidebarMenuItem>
-            <SidebarMenuButton className="text-sidebar-foreground/70">
-              <span>No projects yet</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        )}
-      </SidebarMenu>
-    </SidebarGroup>
+      <SidebarGroup>
+        <div className={cn("flex items-center justify-between px-3 py-2", isCollapsed && "justify-center px-1")}>
+          <SidebarGroupLabel className={cn(isCollapsed && "sr-only")}>Projects</SidebarGroupLabel>
+          {isCollapsed && <Folder className="h-4 w-4 text-muted-foreground" />}
+        </div>
+        <SidebarMenu>
+          {projects.map((project) => (
+            <SidebarMenuItem key={project.id}>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <SidebarMenuButton
+                      onClick={() => handleProjectSelect(project.id)}
+                      className={cn(
+                        selectedProjectId === project.id ? "bg-accent" : "",
+                        isCollapsed && "justify-center px-2"
+                      )}
+                    >
+                      <Folder className={cn("h-4 w-4", isCollapsed && "h-5 w-5", selectedProjectId === project.id && "text-primary")} />
+                      <span className={cn(isCollapsed && "hidden")}>{project.name}</span>
+                    </SidebarMenuButton>
+                  </TooltipTrigger>
+                  {isCollapsed && <TooltipContent side="right">{project.name}</TooltipContent>}
+                </Tooltip>
+              </TooltipProvider>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <SidebarMenuAction showOnHover>
+                    <MoreHorizontal />
+                    <span className="sr-only">More</span>
+                  </SidebarMenuAction>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  className="w-48 rounded-lg"
+                  side={isMobile ? "bottom" : "right"}
+                  align={isMobile ? "end" : "start"}
+                >
+                  <DropdownMenuItem onClick={() => handleProjectSelect(project.id)}>
+                    <Folder className="text-muted-foreground" />
+                    <span>View Project</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <Forward className="text-muted-foreground" />
+                    <span>Share Project</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => handleProjectDelete(project.id)}>
+                    <Trash2 className="text-muted-foreground" />
+                    <span>Delete Project</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </SidebarMenuItem>
+          ))}
+          {projects.length === 0 && (
+            <SidebarMenuItem>
+              <SidebarMenuButton className={cn(
+                "text-sidebar-foreground/70",
+                isCollapsed && "justify-center"
+              )}>
+                <span className={cn(isCollapsed ? "text-xs" : "")}>{isCollapsed ? "..." : "No projects yet"}</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          )}
+        </SidebarMenu>
+      </SidebarGroup>
+    </>
   )
 }
