@@ -6,7 +6,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Textarea } from '@/components/ui/textarea';
 import { useNotesStore } from '@/hooks/use-notes';
 import type { Note } from '@/types/note';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useDebouncedCallback } from 'use-debounce';
 import { renderMarkdownPreviewAction } from '@/app/actions/notes'; // Adjust path if necessary
 
@@ -39,29 +39,26 @@ export function NoteEditor({ noteId, onSave, onCancel }: NoteEditorProps) {
             if (noteToEdit) {
                 setTitle(noteToEdit.title);
                 setContent(noteToEdit.content);
-                // Initial preview render for existing notes when tab is preview
                 if (currentTab === 'preview') {
                     debouncedRenderPreview(noteToEdit.content);
                 }
             } else {
-                // Si la nota no se encuentra (ej. ID inválido o no cargada aún)
-                // Podríamos resetear o mostrar un mensaje
                 setTitle('');
                 setContent('');
                 setPreviewHtml('');
             }
         } else {
-            // Si no hay noteId, es una nueva nota
             setTitle('');
             setContent('');
             setPreviewHtml('');
         }
-    }, [noteId, currentProjectId, getNoteById, currentTab]);
+    }, [noteId, currentProjectId, getNoteById]);
 
     const debouncedRenderPreview = useDebouncedCallback(async (newContent: string) => {
         if (!newContent.trim()) {
             setPreviewHtml('');
             setPreviewError(null);
+            setIsPreviewLoading(false);
             return;
         }
         setIsPreviewLoading(true);
@@ -71,7 +68,7 @@ export function NoteEditor({ noteId, onSave, onCancel }: NoteEditorProps) {
             if ('html' in result) {
                 setPreviewHtml(result.html);
             } else {
-                setPreviewHtml(''); // Clear previous preview on error
+                setPreviewHtml('');
                 setPreviewError(result.error + (result.details ? `: ${result.details}` : ''));
                 console.error("Preview error:", result.error, result.details);
             }
@@ -81,13 +78,12 @@ export function NoteEditor({ noteId, onSave, onCancel }: NoteEditorProps) {
             console.error("Unexpected preview error:", e);
         }
         setIsPreviewLoading(false);
-    }, 300); // Debounce by 300ms
+    }, 300);
 
     useEffect(() => {
         if (currentTab === 'preview') {
             debouncedRenderPreview(content);
         }
-        // Cleanup pending debounced calls if component unmounts or tab changes from preview
         return () => {
             debouncedRenderPreview.cancel();
         };
@@ -96,26 +92,21 @@ export function NoteEditor({ noteId, onSave, onCancel }: NoteEditorProps) {
     const handleSave = async () => {
         if (!currentProjectId) {
             console.error('Project ID not set, cannot save note.');
-            // Podríamos mostrar un error al usuario aquí
             return;
         }
-
         let savedNote: Note | null = null;
         if (noteId) {
             savedNote = await updateNote(noteId, title, content);
         } else {
             savedNote = await addNote(title, content);
         }
-
-        if (savedNote) {
-            if (onSave) onSave(savedNote);
-            // Opcionalmente, resetear campos si no hay onSave o si se queda en la misma vista
-            // Si onSave redirige o cierra el editor, no sería necesario resetear.
-            if (!onSave) {
-                setTitle('');
-                setContent('');
-                setPreviewHtml('');
-            }
+        if (savedNote && onSave) {
+            onSave(savedNote);
+        } else if (savedNote) {
+            setTitle('');
+            setContent('');
+            setPreviewHtml('');
+            setCurrentTab('edit');
         }
     };
 
@@ -123,18 +114,12 @@ export function NoteEditor({ noteId, onSave, onCancel }: NoteEditorProps) {
         if (onCancel) {
             onCancel();
         } else {
-            // Comportamiento por defecto si no hay onCancel (ej. resetear campos)
             setTitle('');
             setContent('');
             setPreviewHtml('');
+            setCurrentTab('edit');
         }
     };
-
-    if (!currentProjectId && !noteId) {
-        // Espera a que se cargue el proyecto o si es una nueva nota sin proyecto (no debería pasar en este flujo)
-        // Podríamos mostrar un loader o un mensaje
-        // return <div>Loading project context...</div>;
-    }
 
     return (
         <div className="flex flex-col h-full p-1">
@@ -170,7 +155,7 @@ export function NoteEditor({ noteId, onSave, onCancel }: NoteEditorProps) {
                             <p className="text-muted-foreground">Empieza a escribir para ver la vista previa.</p>
                         )}
                         {!isPreviewLoading && !previewError && !previewHtml && content.trim() && (
-                            <p className="text-muted-foreground">Generando vista previa...</p> // Fallback if html is empty but content exists
+                            <p className="text-muted-foreground">Generando vista previa...</p>
                         )}
                     </div>
                 )}
