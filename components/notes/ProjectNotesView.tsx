@@ -55,21 +55,32 @@ export function ProjectNotesView({ projectId }: ProjectNotesViewProps) {
 
     useEffect(() => {
         if (currentNoteId) {
-            if (editorMode !== 'new') {
+            // If a note is selected (currentNoteId is truthy),
+            // always switch to 'view' mode for that note.
+            if (editorMode !== 'view') { // Optimization: only set if not already 'view'
                 setEditorMode('view');
             }
             if (!isDesktop) {
-                setIsDrawerOpen(true);
+                // Ensure drawer is open when a note is selected on mobile
+                if (!isDrawerOpen) setIsDrawerOpen(true);
             }
         } else {
+            // No currentNoteId.
+            // This means either we are in 'new' note mode, or no note is selected (show placeholder).
             if (editorMode !== 'new') {
-                setEditorMode(null);
+                // If not actively in 'new' mode, then reset to placeholder.
+                if (editorMode !== null) { // Optimization: only set if not already null
+                    setEditorMode(null);
+                }
                 if (!isDesktop) {
-                    setIsDrawerOpen(false);
+                    // If not on desktop and drawer is open (and not in 'new' mode), close it.
+                    if (isDrawerOpen) setIsDrawerOpen(false);
                 }
             }
+            // If editorMode IS 'new' (and currentNoteId is null), we are actively creating a new note.
+            // In this case, editorMode remains 'new', and drawer state is managed by handleCreateNewNote/handleEditorCancel.
         }
-    }, [currentNoteId, isDesktop, editorMode]);
+    }, [currentNoteId, isDesktop, editorMode, isDrawerOpen]); // Added isDrawerOpen to dependencies
 
     const handleSelectNote = useCallback((noteId: string) => {
         selectNote(noteId);
