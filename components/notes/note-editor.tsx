@@ -1,6 +1,5 @@
 'use client';
 
-import { MarkdownPreview } from '@/components/notes/markdown-preview';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -8,6 +7,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { useNotesStore } from '@/hooks/use-notes';
 import type { Note } from '@/types/note';
 import { useEffect, useState } from 'react';
+import { useDebouncedCallback } from 'use-debounce';
+import { renderMarkdownPreviewAction } from '@/app/actions/notes'; // Adjust path if necessary
 
 interface NoteEditorProps {
     noteId?: string | null; // Si se proporciona, edita una nota existente
@@ -19,6 +20,9 @@ export function NoteEditor({ noteId, onSave, onCancel }: NoteEditorProps) {
     const [title, setTitle] = useState('');
     const [content, setContent] = useState('');
     const [currentTab, setCurrentTab] = useState<'edit' | 'preview'>('edit');
+    const [previewHtml, setPreviewHtml] = useState('');
+    const [isPreviewLoading, setIsPreviewLoading] = useState(false);
+    const [previewError, setPreviewError] = useState<string | null>(null);
 
     const {
         addNote,
@@ -35,18 +39,59 @@ export function NoteEditor({ noteId, onSave, onCancel }: NoteEditorProps) {
             if (noteToEdit) {
                 setTitle(noteToEdit.title);
                 setContent(noteToEdit.content);
+                // Initial preview render for existing notes when tab is preview
+                if (currentTab === 'preview') {
+                    debouncedRenderPreview(noteToEdit.content);
+                }
             } else {
                 // Si la nota no se encuentra (ej. ID inválido o no cargada aún)
                 // Podríamos resetear o mostrar un mensaje
                 setTitle('');
                 setContent('');
+                setPreviewHtml('');
             }
         } else {
             // Si no hay noteId, es una nueva nota
             setTitle('');
             setContent('');
+            setPreviewHtml('');
         }
-    }, [noteId, currentProjectId, getNoteById]);
+    }, [noteId, currentProjectId, getNoteById, currentTab]);
+
+    const debouncedRenderPreview = useDebouncedCallback(async (newContent: string) => {
+        if (!newContent.trim()) {
+            setPreviewHtml('');
+            setPreviewError(null);
+            return;
+        }
+        setIsPreviewLoading(true);
+        setPreviewError(null);
+        try {
+            const result = await renderMarkdownPreviewAction(newContent);
+            if ('html' in result) {
+                setPreviewHtml(result.html);
+            } else {
+                setPreviewHtml(''); // Clear previous preview on error
+                setPreviewError(result.error + (result.details ? `: ${result.details}` : ''));
+                console.error("Preview error:", result.error, result.details);
+            }
+        } catch (e) {
+            setPreviewHtml('');
+            setPreviewError('An unexpected error occurred while rendering preview.');
+            console.error("Unexpected preview error:", e);
+        }
+        setIsPreviewLoading(false);
+    }, 300); // Debounce by 300ms
+
+    useEffect(() => {
+        if (currentTab === 'preview') {
+            debouncedRenderPreview(content);
+        }
+        // Cleanup pending debounced calls if component unmounts or tab changes from preview
+        return () => {
+            debouncedRenderPreview.cancel();
+        };
+    }, [content, currentTab, debouncedRenderPreview]);
 
     const handleSave = async () => {
         if (!currentProjectId) {
@@ -69,6 +114,7 @@ export function NoteEditor({ noteId, onSave, onCancel }: NoteEditorProps) {
             if (!onSave) {
                 setTitle('');
                 setContent('');
+                setPreviewHtml('');
             }
         }
     };
@@ -80,6 +126,7 @@ export function NoteEditor({ noteId, onSave, onCancel }: NoteEditorProps) {
             // Comportamiento por defecto si no hay onCancel (ej. resetear campos)
             setTitle('');
             setContent('');
+            setPreviewHtml('');
         }
     };
 
@@ -113,13 +160,23 @@ export function NoteEditor({ noteId, onSave, onCancel }: NoteEditorProps) {
                         disabled={isLoading}
                     />
                 ) : (
-                    <div className="p-2 border rounded-md min-h-[300px] bg-muted/30">
-                        <MarkdownPreview markdownContent={content} />
+                    <div className="p-2 border rounded-md min-h-[300px] bg-muted/30 prose prose-sm dark:prose-invert max-w-none prose-headings:mt-2 prose-headings:mb-1 prose-p:my-1">
+                        {isPreviewLoading && <p className="text-muted-foreground">Cargando vista previa...</p>}
+                        {previewError && <p className="text-red-500">Error en la vista previa: {previewError}</p>}
+                        {!isPreviewLoading && !previewError && previewHtml && (
+                            <div dangerouslySetInnerHTML={{ __html: previewHtml }} />
+                        )}
+                        {!isPreviewLoading && !previewError && !previewHtml && !content.trim() && (
+                            <p className="text-muted-foreground">Empieza a escribir para ver la vista previa.</p>
+                        )}
+                        {!isPreviewLoading && !previewError && !previewHtml && content.trim() && (
+                            <p className="text-muted-foreground">Generando vista previa...</p> // Fallback if html is empty but content exists
+                        )}
                     </div>
                 )}
             </ScrollArea>
 
-            {error && <p className="text-sm text-red-500 mb-2">Error: {error}</p>}
+            {error && <p className="text-sm text-red-500 mb-2">Error guardando: {error}</p>}
 
             <div className="flex justify-end gap-2 mt-auto">
                 {onCancel && (
