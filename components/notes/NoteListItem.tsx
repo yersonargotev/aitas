@@ -1,5 +1,16 @@
 "use client";
 
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Button as ShadcnButton } from "@/components/ui/button";
 import { useNotesStore } from "@/hooks/use-notes";
 import type { Note } from "@/types/note";
@@ -21,11 +32,8 @@ export function NoteListItem({
 }: NoteListItemProps) {
     const { deleteNote, isLoading } = useNotesStore();
 
-    const handleDelete = (e: React.MouseEvent | React.KeyboardEvent) => {
-        e.stopPropagation();
-        if (window.confirm("¿Estás seguro de que quieres eliminar esta nota?")) {
-            deleteNote(note.id);
-        }
+    const handleDeleteConfirm = () => {
+        deleteNote(note.id);
     };
 
     const handleItemClick = () => {
@@ -70,22 +78,38 @@ export function NoteListItem({
                     <p className="text-xs text-muted-foreground">Modificado {timeAgo}</p>
                 </div>
             </div>
-            <ShadcnButton
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 flex-shrink-0 text-muted-foreground hover:text-destructive"
-                onClick={handleDelete}
-                onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                        e.stopPropagation();
-                        handleDelete(e);
-                    }
-                }}
-                disabled={isLoading}
-                aria-label="Eliminar nota"
-            >
-                <Trash2 className="h-4 w-4" />
-            </ShadcnButton>
+            <AlertDialog>
+                <AlertDialogTrigger asChild>
+                    <ShadcnButton
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 flex-shrink-0 text-muted-foreground hover:text-destructive"
+                        disabled={isLoading}
+                        aria-label="Eliminar nota"
+                    >
+                        <Trash2 className="h-4 w-4" />
+                    </ShadcnButton>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>¿Estás absolutamente seguro?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Esta acción no se puede deshacer. Esto eliminará permanentemente
+                            tu nota de nuestros servidores.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={isLoading}>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleDeleteConfirm}
+                            disabled={isLoading}
+                            className={isLoading ? "opacity-70 cursor-not-allowed" : ""}
+                        >
+                            {isLoading ? "Eliminando..." : "Eliminar"}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }
