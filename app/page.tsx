@@ -1,7 +1,7 @@
 import { AppSidebar } from "@/components/app-sidebar"
 import { Matrix } from "@/components/eisenhower/matrix"
 import { Header } from "@/components/layout/header"
-import { ProjectNotesView } from "@/components/notes/ProjectNotesView"
+import { ProjectNotesView } from "@/components/notes/project-notes-view"
 import {
   SidebarInset,
   SidebarProvider,

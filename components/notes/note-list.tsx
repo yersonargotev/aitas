@@ -1,12 +1,12 @@
 'use client';
 
+import { NoteListItem } from '@/components/notes/note-list-item';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useNotesStore } from '@/hooks/use-notes';
 import type { Note } from '@/types/note';
 import { PlusCircle } from 'lucide-react';
 import { useShallow } from 'zustand/shallow';
-import { NoteListItem } from './NoteListItem';
 
 interface NoteListProps {
     // projectId se toma ahora del store

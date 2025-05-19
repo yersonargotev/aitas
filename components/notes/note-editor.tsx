@@ -1,5 +1,6 @@
 'use client';
 
+import { MarkdownPreview } from '@/components/notes/markdown-preview';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -7,7 +8,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { useNotesStore } from '@/hooks/use-notes';
 import type { Note } from '@/types/note';
 import { useEffect, useState } from 'react';
-import { MarkdownPreview } from './MarkdownPreview';
 
 interface NoteEditorProps {
     noteId?: string | null; // Si se proporciona, edita una nota existente

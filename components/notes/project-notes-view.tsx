@@ -1,5 +1,7 @@
 "use client";
 
+import { NoteEditor } from "@/components/notes/note-editor";
+import { NoteList } from "@/components/notes/note-list";
 import { Button } from "@/components/ui/button";
 import {
     Drawer,
@@ -18,8 +20,6 @@ import { useNotesStore } from "@/hooks/use-notes";
 import { PanelLeftClose, XIcon } from "lucide-react";
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import type { ImperativePanelHandle } from 'react-resizable-panels';
-import { NoteEditor } from "./NoteEditor";
-import { NoteList } from "./NoteList";
 
 interface ProjectNotesViewProps {
     projectId: string;
