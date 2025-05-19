@@ -1,19 +1,19 @@
 'use client';
 
+import { renderMarkdownPreviewAction } from '@/app/actions/notes';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Textarea } from '@/components/ui/textarea';
 import { useNotesStore } from '@/hooks/use-notes';
 import type { Note } from '@/types/note';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { useDebouncedCallback } from 'use-debounce';
-import { renderMarkdownPreviewAction } from '@/app/actions/notes'; // Adjust path if necessary
 
 interface NoteEditorProps {
-    noteId?: string | null; // Si se proporciona, edita una nota existente
-    onSave?: (note: Note) => void; // Callback opcional al guardar
-    onCancel?: () => void; // Callback opcional al cancelar
+    noteId?: string | null;
+    onSave?: (note: Note) => void;
+    onCancel?: () => void;
 }
 
 export function NoteEditor({ noteId, onSave, onCancel }: NoteEditorProps) {
@@ -24,35 +24,7 @@ export function NoteEditor({ noteId, onSave, onCancel }: NoteEditorProps) {
     const [isPreviewLoading, setIsPreviewLoading] = useState(false);
     const [previewError, setPreviewError] = useState<string | null>(null);
 
-    const {
-        addNote,
-        updateNote,
-        getNoteById,
-        currentProjectId,
-        isLoading,
-        error
-    } = useNotesStore();
-
-    useEffect(() => {
-        if (noteId && currentProjectId) {
-            const noteToEdit = getNoteById(noteId);
-            if (noteToEdit) {
-                setTitle(noteToEdit.title);
-                setContent(noteToEdit.content);
-                if (currentTab === 'preview') {
-                    debouncedRenderPreview(noteToEdit.content);
-                }
-            } else {
-                setTitle('');
-                setContent('');
-                setPreviewHtml('');
-            }
-        } else {
-            setTitle('');
-            setContent('');
-            setPreviewHtml('');
-        }
-    }, [noteId, currentProjectId, getNoteById]);
+    const { addNote, updateNote, getNoteById, currentProjectId, isLoading, error } = useNotesStore();
 
     const debouncedRenderPreview = useDebouncedCallback(async (newContent: string) => {
         if (!newContent.trim()) {
@@ -79,6 +51,27 @@ export function NoteEditor({ noteId, onSave, onCancel }: NoteEditorProps) {
         }
         setIsPreviewLoading(false);
     }, 300);
+
+    useEffect(() => {
+        if (noteId && currentProjectId) {
+            const noteToEdit = getNoteById(noteId);
+            if (noteToEdit) {
+                setTitle(noteToEdit.title);
+                setContent(noteToEdit.content);
+                if (currentTab === 'preview') {
+                    debouncedRenderPreview(noteToEdit.content);
+                }
+            } else {
+                setTitle('');
+                setContent('');
+                setPreviewHtml('');
+            }
+        } else {
+            setTitle('');
+            setContent('');
+            setPreviewHtml('');
+        }
+    }, [noteId, currentProjectId, getNoteById]);
 
     useEffect(() => {
         if (currentTab === 'preview') {
@@ -175,4 +168,4 @@ export function NoteEditor({ noteId, onSave, onCancel }: NoteEditorProps) {
             </div>
         </div>
     );
-} 
+}
