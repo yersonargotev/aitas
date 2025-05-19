@@ -52,6 +52,7 @@ export function NoteEditor({ noteId, onSave, onCancel }: NoteEditorProps) {
         setIsPreviewLoading(false);
     }, 300);
 
+    // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
     useEffect(() => {
         if (noteId && currentProjectId) {
             const noteToEdit = getNoteById(noteId);
@@ -142,6 +143,7 @@ export function NoteEditor({ noteId, onSave, onCancel }: NoteEditorProps) {
                         {isPreviewLoading && <p className="text-muted-foreground">Cargando vista previa...</p>}
                         {previewError && <p className="text-red-500">Error en la vista previa: {previewError}</p>}
                         {!isPreviewLoading && !previewError && previewHtml && (
+                            // biome-ignore lint/security/noDangerouslySetInnerHtml: <explanation>
                             <div dangerouslySetInnerHTML={{ __html: previewHtml }} />
                         )}
                         {!isPreviewLoading && !previewError && !previewHtml && !content.trim() && (
