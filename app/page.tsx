@@ -1,10 +1,13 @@
 import { AppSidebar } from "@/components/app-sidebar"
 import { Matrix } from "@/components/eisenhower/matrix"
 import { Header } from "@/components/layout/header"
+import { ProjectNotesView } from "@/components/notes/ProjectNotesView"
 import {
   SidebarInset,
   SidebarProvider,
 } from "@/components/ui/sidebar"
+
+const MAIN_PAGE_PROJECT_ID = "main_dashboard_notes"
 
 export default function Page() {
   return (
@@ -12,8 +15,13 @@ export default function Page() {
       <AppSidebar />
       <SidebarInset>
         <Header showSidebarTrigger={true} />
-        <div className="flex flex-1 flex-col gap-4 p-4 pt-4">
-          <Matrix />
+        <div className="flex flex-1 flex-col overflow-auto p-4 gap-6">
+          <div>
+            <Matrix />
+          </div>
+          <div className="flex flex-1 flex-col min-h-[500px]">
+            <ProjectNotesView projectId={MAIN_PAGE_PROJECT_ID} />
+          </div>
         </div>
       </SidebarInset>
     </SidebarProvider>
