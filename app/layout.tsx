@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/app/providers";
+import { TailwindIndicator } from "@/components/dev/tailwind-indicator";
 import { Footer } from "@/components/layout/footer";
 import { Toaster } from "@/components/ui/sonner";
 import { META_THEME_COLORS, siteConfig } from "@/config/site";
@@ -92,6 +93,7 @@ export default function RootLayout({
           <Footer />
         </Providers>
         <Toaster />
+        <TailwindIndicator />
       </body>
     </html>
   );
