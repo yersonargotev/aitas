@@ -141,3 +141,46 @@
 		@apply bg-background text-foreground;
 	}
 }
+
+/* Shiki theme synchronization with next-themes */
+/* When html.dark is present, apply Shiki's dark theme variables. */
+/* This assumes Shiki's dual theme setup populates CSS variables like --shiki-dark-bg, --shiki-dark, etc., on the .shiki element or its children. */
+/* The specific variable names (--shiki-dark-bg, --shiki-dark) are standard for Shiki's dual-theme output. */
+/* You might need to inspect the output of Shiki to confirm exact variable names for token colors if they are not automatically handled. */
+
+html.dark .shiki {
+	/* Apply Shiki's dark background. The variable --shiki-dark-bg is set by Shiki on the <pre> element. */
+	background-color: var(--shiki-dark-bg) !important;
+	/* Apply Shiki's dark foreground (main text color). The variable --shiki-dark is set by Shiki on the <pre> element. */
+	color: var(--shiki-dark) !important;
+}
+
+/* For individual token colors, Shiki often generates CSS like: */
+/* .shiki span { color: var(--shiki-light-token-color); } */
+/* @media (prefers-color-scheme: dark) { .shiki span { color: var(--shiki-dark-token-color); } } */
+/* We need to override this for all token spans. */
+/* This is a general approach. Shiki generates many specific token styles (e.g., .syntax .comment, .syntax .keyword). */
+/* If Shiki sets CSS variables for each token type for both light and dark themes (e.g., --shiki-dark-token-keyword), */
+/* then the following general rule for spans might not be sufficient, and more specific overrides might be needed, */
+/* or Shiki's own CSS variable structure for tokens might handle it correctly with just the .shiki bg/fg override. */
+/* Often, the token colors are direct hex values in the theme definition and Shiki translates these into variables */
+/* like var(--shiki-token-keyword-fg-dark) etc, or uses a simpler var(--shiki-dark-TOKEN_NAME) */
+
+html.dark .shiki span {
+	color: var(--shiki-dark) !important; /* Default to main dark foreground for spans */
+}
+
+/* More specific overrides if Shiki uses distinct variables for token colors in dark mode */
+/* Example (these variable names are illustrative and depend on Shiki's output for your themes): */
+/*
+html.dark .shiki .token.comment { color: var(--shiki-dark-comment) !important; }
+html.dark .shiki .token.keyword { color: var(--shiki-dark-keyword) !important; }
+html.dark .shiki .token.string { color: var(--shiki-dark-string) !important; }
+*/
+
+/* It's often better if Shiki's own CSS handles the token color switching based on the parent .shiki colors, */
+/* or if it generates CSS variables for each token type that we can then override. */
+/* The `!important` is used here because Shiki's inline styles or highly specific selectors might otherwise take precedence. */
+/* Test thoroughly to see if the span overrides are too aggressive or if Shiki handles token colors better automatically once the main bg/fg are set. */
+/* For many Shiki themes, changing the main background and foreground is enough for the tokens to adapt if they are defined relative to these, */
+/* or if Shiki's CSS properly cascades the dark mode variables to tokens. */
