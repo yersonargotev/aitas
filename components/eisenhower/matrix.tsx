@@ -7,7 +7,7 @@ import { DroppableZone } from "@/components/eisenhower/droppable-zone";
 import { ProjectSelector } from "@/components/eisenhower/project-selector";
 import { TaskCard } from "@/components/eisenhower/task-card";
 import { TaskForm } from "@/components/eisenhower/task-form";
-import { TaskStatistics } from "@/components/eisenhower/task-statistics";
+
 import { UnclassifiedTasksSection } from "@/components/eisenhower/unclassified-tasks-section";
 import {
     Accordion,
@@ -361,9 +361,6 @@ export function Matrix() {
                 </Accordion>
             )}
 
-            <div className="w-full mx-auto">
-                <TaskStatistics statistics={statistics} />
-            </div>
         </div>
     );
 }
