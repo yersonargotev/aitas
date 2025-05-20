@@ -87,7 +87,7 @@ export default function RootLayout({
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col`}>
         <Providers attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-          <main className="flex-1 container mx-auto px-4 py-8">
+          <main className="flex-1 flex flex-col">
             {children}
           </main>
           <Footer />
