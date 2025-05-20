@@ -4,4 +4,3 @@ globs:
 alwaysApply: true
 ---
 - use sonner for toast notifications
-- never update or change the shadcn/ui components (@/components/ui/*), only use them
