@@ -35,13 +35,13 @@ export default function Page() {
               <TabsTrigger value="notes" className="text-xs sm:text-sm px-2.5 sm:px-3 py-1 sm:py-1.5">Notes</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="dashboard" className="flex-1 overflow-y-auto focus-visible:ring-0 focus-visible:ring-offset-0">
+            <TabsContent value="dashboard" className="flex-1 overflow-y-auto overflow-x-hidden focus-visible:ring-0 focus-visible:ring-offset-0">
               <TaskStatisticsDashboard />
             </TabsContent>
-            <TabsContent value="tasks" className="flex-1 overflow-y-auto focus-visible:ring-0 focus-visible:ring-offset-0">
+            <TabsContent value="tasks" className="flex-1 overflow-y-auto overflow-x-hidden focus-visible:ring-0 focus-visible:ring-offset-0">
               <Matrix />
             </TabsContent>
-            <TabsContent value="notes" className="flex-1 flex flex-col overflow-y-auto focus-visible:ring-0 focus-visible:ring-offset-0 min-h-[500px]">
+            <TabsContent value="notes" className="flex-1 flex flex-col overflow-y-auto overflow-x-hidden focus-visible:ring-0 focus-visible:ring-offset-0 min-h-[500px]">
               <ProjectNotesView projectId={MAIN_PAGE_PROJECT_ID} />
             </TabsContent>
           </Tabs>
