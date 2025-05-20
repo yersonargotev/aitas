@@ -73,7 +73,6 @@ export function Matrix() {
     const {
         tasks,
         filters,
-        statistics,
         addTask,
         updateTask,
         deleteTask,
