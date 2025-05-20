@@ -118,21 +118,21 @@ export function NoteEditor({ noteId, onSave, onCancel }: NoteEditorProps) {
     return (
         <div className="flex flex-col h-full p-1">
             <Input
-                placeholder="Título de la nota"
+                placeholder="Note title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 className="mb-2"
                 disabled={isLoading}
             />
             <div className="mb-2 flex gap-1 border-b pb-1">
-                <Button variant={currentTab === 'edit' ? 'secondary' : 'ghost'} size="sm" onClick={() => setCurrentTab('edit')}>Editar</Button>
-                <Button variant={currentTab === 'preview' ? 'secondary' : 'ghost'} size="sm" onClick={() => setCurrentTab('preview')}>Vista Previa</Button>
+                <Button variant={currentTab === 'edit' ? 'secondary' : 'ghost'} size="sm" onClick={() => setCurrentTab('edit')}>Edit</Button>
+                <Button variant={currentTab === 'preview' ? 'secondary' : 'ghost'} size="sm" onClick={() => setCurrentTab('preview')}>Preview</Button>
             </div>
 
             <ScrollArea className="flex-1 mb-2 min-h-[200px]">
                 {currentTab === 'edit' ? (
                     <Textarea
-                        placeholder="Escribe tu nota en Markdown..."
+                        placeholder="Write your note in Markdown..."
                         value={content}
                         onChange={(e) => setContent(e.target.value)}
                         className="min-h-[300px] resize-none h-full text-sm"
@@ -140,32 +140,32 @@ export function NoteEditor({ noteId, onSave, onCancel }: NoteEditorProps) {
                     />
                 ) : (
                     <div className="p-2 border rounded-md min-h-[300px] bg-muted/30 prose prose-sm dark:prose-invert max-w-none prose-headings:mt-2 prose-headings:mb-1 prose-p:my-1">
-                        {isPreviewLoading && <p className="text-muted-foreground">Cargando vista previa...</p>}
-                        {previewError && <p className="text-red-500">Error en la vista previa: {previewError}</p>}
+                        {isPreviewLoading && <p className="text-muted-foreground">Loading preview...</p>}
+                        {previewError && <p className="text-red-500">Preview error: {previewError}</p>}
                         {!isPreviewLoading && !previewError && previewHtml && (
                             // biome-ignore lint/security/noDangerouslySetInnerHtml: <explanation>
                             <div dangerouslySetInnerHTML={{ __html: previewHtml }} />
                         )}
                         {!isPreviewLoading && !previewError && !previewHtml && !content.trim() && (
-                            <p className="text-muted-foreground">Empieza a escribir para ver la vista previa.</p>
+                            <p className="text-muted-foreground">Start writing to see the preview.</p>
                         )}
                         {!isPreviewLoading && !previewError && !previewHtml && content.trim() && (
-                            <p className="text-muted-foreground">Generando vista previa...</p>
+                            <p className="text-muted-foreground">Generating preview...</p>
                         )}
                     </div>
                 )}
             </ScrollArea>
 
-            {error && <p className="text-sm text-red-500 mb-2">Error guardando: {error}</p>}
+            {error && <p className="text-sm text-red-500 mb-2">Error saving: {error}</p>}
 
             <div className="flex justify-end gap-2 mt-auto">
                 {onCancel && (
                     <Button variant="outline" onClick={handleCancel} disabled={isLoading}>
-                        Cancelar
+                        Cancel
                     </Button>
                 )}
                 <Button onClick={handleSave} disabled={isLoading || !title.trim() || !content.trim()}>
-                    {isLoading ? 'Guardando...' : (noteId ? 'Actualizar Nota' : 'Guardar Nota')}
+                    {isLoading ? 'Saving...' : (noteId ? 'Update Note' : 'Save Note')}
                 </Button>
             </div>
         </div>

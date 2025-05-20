@@ -115,8 +115,8 @@ export function ProjectNotesView({ projectId }: ProjectNotesViewProps) {
     const editorPlaceholder = (
         <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-4 text-center">
             <PanelLeftClose className="h-12 w-12 mb-4 opacity-50" />
-            <p className="text-sm">Selecciona una nota para verla o editarla.</p>
-            <p className="text-sm">O crea una <Button variant="link" className="p-0 h-auto inline" onClick={handleCreateNewNote}>nueva nota</Button>.</p>
+            <p className="text-sm">Select a note to view or edit it.</p>
+            <p className="text-sm">Or create a <Button variant="link" className="p-0 h-auto inline" onClick={handleCreateNewNote}>new note</Button>.</p>
         </div>
     );
 
@@ -182,7 +182,7 @@ export function ProjectNotesView({ projectId }: ProjectNotesViewProps) {
                 <DrawerContent className="h-[90vh] flex flex-col">
                     <DrawerHeader className="flex justify-between items-center p-4 border-b">
                         <DrawerTitle className="text-lg font-semibold">
-                            {editorMode === 'new' ? 'Nueva Nota' : (currentNoteId ? 'Editar Nota' : 'Nota')}
+                            {editorMode === 'new' ? 'New Note' : (currentNoteId ? 'Edit Note' : 'Note')}
                         </DrawerTitle>
                         <DrawerClose asChild>
                             <Button variant="ghost" size="icon" onClick={handleEditorCancel}>

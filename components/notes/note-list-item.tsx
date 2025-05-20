@@ -15,7 +15,6 @@ import { Button as ShadcnButton } from "@/components/ui/button";
 import { useNotesStore } from "@/hooks/use-notes";
 import type { Note } from "@/types/note";
 import { formatDistanceToNow } from "date-fns";
-import { es } from "date-fns/locale";
 import { FileText, Trash2 } from "lucide-react";
 import type React from "react";
 
@@ -53,7 +52,6 @@ export function NoteListItem({
 
     const timeAgo = formatDistanceToNow(new Date(note.updatedAt), {
         addSuffix: true,
-        locale: es,
     });
 
     return (
@@ -73,9 +71,9 @@ export function NoteListItem({
                 <FileText className="h-5 w-5 text-muted-foreground flex-shrink-0" />
                 <div className="truncate">
                     <p className="font-medium truncate text-sm">
-                        {note.title || "Nota sin título"}
+                        {note.title || "Untitled Note"}
                     </p>
-                    <p className="text-xs text-muted-foreground">Modificado {timeAgo}</p>
+                    <p className="text-xs text-muted-foreground">Modified {timeAgo}</p>
                 </div>
             </div>
             <AlertDialog>
@@ -85,27 +83,27 @@ export function NoteListItem({
                         size="icon"
                         className="h-8 w-8 flex-shrink-0 text-muted-foreground hover:text-destructive"
                         disabled={isLoading}
-                        aria-label="Eliminar nota"
+                        aria-label="Delete note"
                     >
                         <Trash2 className="h-4 w-4" />
                     </ShadcnButton>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>¿Estás absolutamente seguro?</AlertDialogTitle>
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Esta acción no se puede deshacer. Esto eliminará permanentemente
-                            tu nota de nuestros servidores.
+                            This action cannot be undone. This will permanently delete
+                            your note from our servers.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel disabled={isLoading}>Cancelar</AlertDialogCancel>
+                        <AlertDialogCancel disabled={isLoading}>Cancel</AlertDialogCancel>
                         <AlertDialogAction
                             onClick={handleDeleteConfirm}
                             disabled={isLoading}
                             className={isLoading ? "opacity-70 cursor-not-allowed" : ""}
                         >
-                            {isLoading ? "Eliminando..." : "Eliminar"}
+                            {isLoading ? "Deleting..." : "Delete"}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

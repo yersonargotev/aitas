@@ -25,11 +25,11 @@ export function NoteList({ onSelectNote, onCreateNewNote }: NoteListProps) {
     );
 
     if (isLoading && !notes.length) {
-        return <div className="p-4 text-center text-sm text-muted-foreground">Cargando notas...</div>;
+        return <div className="p-4 text-center text-sm text-muted-foreground">Loading notes...</div>;
     }
 
     if (error) {
-        return <div className="p-4 text-center text-sm text-red-500">Error al cargar notas: {error}</div>;
+        return <div className="p-4 text-center text-sm text-red-500">Error loading notes: {error}</div>;
     }
 
     return (
@@ -37,13 +37,13 @@ export function NoteList({ onSelectNote, onCreateNewNote }: NoteListProps) {
             <div className="p-3 border-b">
                 <Button onClick={onCreateNewNote} className="w-full" variant="outline">
                     <PlusCircle className="mr-2 h-4 w-4" />
-                    Nueva Nota
+                    New Note
                 </Button>
             </div>
             <ScrollArea className="flex-1">
                 {notes.length === 0 ? (
                     <p className="p-4 text-center text-sm text-muted-foreground">
-                        No hay notas en este proyecto. ¡Crea una!
+                        No notes in this project. Create one!
                     </p>
                 ) : (
                     <div className="p-2 space-y-1">
