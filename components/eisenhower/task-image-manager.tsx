@@ -8,6 +8,7 @@ import { useTaskStore } from '@/lib/stores/task-store';
 import type { TaskImage } from '@/lib/stores/types';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Clipboard, Info, Upload, X } from 'lucide-react';
+import { ImageIcon } from 'lucide-react';
 import { useRef, useState } from 'react';
 
 interface TaskImageManagerProps {
@@ -22,7 +23,7 @@ export function TaskImageManager({ taskId, images = [] }: TaskImageManagerProps)
     const [isUploading, setIsUploading] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
     const { addImageToTask, removeImageFromTask } = useTaskStore();
-    const imageUrls = useImageUrls(images);
+    const { urlCache: imageUrls } = useImageUrls(images);
 
     // Hook para manejar el paste desde clipboard
     const { pasteFromClipboard, isPasting } = useClipboardPaste({
@@ -234,12 +235,21 @@ export function TaskImageManager({ taskId, images = [] }: TaskImageManagerProps)
                                         transition={{ duration: 0.2 }}
                                     >
                                         <div className="aspect-square rounded-lg overflow-hidden bg-gray-100 border shadow-sm">
-                                            <img
-                                                src={imageUrl}
-                                                alt={image.name}
-                                                className="w-full h-full object-cover transition-transform group-hover:scale-105"
-                                                loading="lazy"
-                                            />
+                                            {imageUrl ? (
+                                                <img
+                                                    src={imageUrl}
+                                                    alt={image.name}
+                                                    className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                                                    loading="lazy"
+                                                />
+                                            ) : (
+                                                <div className="w-full h-full flex items-center justify-center text-gray-400">
+                                                    <div className="text-center">
+                                                        <ImageIcon className="h-6 w-6 mx-auto mb-1" />
+                                                        <span className="text-xs">Loading...</span>
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
 
                                         {/* Remove button */}

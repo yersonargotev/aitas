@@ -100,7 +100,7 @@ export function TaskCard({
     const [editedTitle, setEditedTitle] = useState(title);
     const [editedDescription, setEditedDescription] = useState(description || "");
 
-    const imageUrls = useImageUrls(images);
+    const { urlCache: imageUrls } = useImageUrls(images);
 
     const { attributes, listeners, setNodeRef: setDraggableRef, transform, isDragging } =
         useDraggable({
@@ -397,7 +397,20 @@ export function TaskCard({
                                     </div>
                                     <div className="grid grid-cols-2 gap-2">
                                         {images.slice(0, 4).map((image) => {
-                                            const imageUrl = imageUrls[image.id] || "";
+                                            const imageUrl = imageUrls[image.id];
+
+                                            // No renderizar si no hay URL válida
+                                            if (!imageUrl) {
+                                                return (
+                                                    <div key={image.id} className="aspect-square rounded overflow-hidden border shadow-sm bg-gray-100 flex items-center justify-center">
+                                                        <div className="text-center text-gray-400">
+                                                            <ImageIcon className="h-4 w-4 mx-auto mb-1" />
+                                                            <span className="text-xs">Loading...</span>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            }
+
                                             return (
                                                 <div key={image.id} className="aspect-square rounded overflow-hidden border shadow-sm">
                                                     <img

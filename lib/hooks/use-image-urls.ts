@@ -12,6 +12,7 @@ export function useImageUrls(images: TaskImage[] = []) {
 	const urlCacheRef = useRef<ImageUrlCache>({});
 	const imagesMapRef = useRef<Map<string, TaskImage>>(new Map());
 	const [urlCache, setUrlCache] = useState<ImageUrlCache>({});
+	const [isLoading, setIsLoading] = useState(false);
 
 	// Crear mapa de imágenes por ID para acceso rápido
 	const imageIds = useMemo(() => {
@@ -25,7 +26,13 @@ export function useImageUrls(images: TaskImage[] = []) {
 
 	// Crear/actualizar URLs cuando cambian los IDs de las imágenes
 	useEffect(() => {
-		const updateUrls = () => {
+		const updateUrls = async () => {
+			if (imageIds.length === 0) {
+				setUrlCache({});
+				return;
+			}
+
+			setIsLoading(true);
 			const currentCache = { ...urlCacheRef.current };
 			const currentImageIds = new Set(imageIds);
 			let hasChanges = false;
@@ -48,8 +55,11 @@ export function useImageUrls(images: TaskImage[] = []) {
 					const image = imagesMapRef.current.get(imageId);
 					if (image?.file) {
 						try {
-							currentCache[imageId] = imageStorage.createImageUrl(image.file);
-							hasChanges = true;
+							const url = imageStorage.createImageUrl(image.file);
+							if (url && url !== "") {
+								currentCache[imageId] = url;
+								hasChanges = true;
+							}
 						} catch (error) {
 							console.warn(`Failed to create URL for image ${imageId}:`, error);
 						}
@@ -62,6 +72,8 @@ export function useImageUrls(images: TaskImage[] = []) {
 				urlCacheRef.current = currentCache;
 				setUrlCache({ ...currentCache });
 			}
+
+			setIsLoading(false);
 		};
 
 		updateUrls();
@@ -80,7 +92,7 @@ export function useImageUrls(images: TaskImage[] = []) {
 		};
 	}, []);
 
-	return urlCache;
+	return { urlCache, isLoading };
 }
 
 // Hook para inicializar las imágenes al cargar la aplicación
