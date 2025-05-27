@@ -149,17 +149,17 @@ export function ImagePreviewDialog({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-6xl w-full h-[90vh] p-0 overflow-hidden">
                 <DialogHeader className="absolute top-0 left-0 right-0 z-10 bg-background/95 backdrop-blur-sm border-b p-4">
-                    <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                            <DialogTitle className="text-lg font-semibold truncate">
+                    <div className="flex items-center justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                            <DialogTitle className="text-lg font-semibold truncate max-w-full">
                                 {currentImage.name}
                             </DialogTitle>
-                            <p className="text-sm text-muted-foreground mt-1">
+                            <p className="text-sm text-muted-foreground mt-1 truncate">
                                 {formatFileSize(currentImage.size)} • {currentIndex + 1} of {images.length}
                             </p>
                         </div>
 
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-shrink-0">
                             {/* Zoom controls */}
                             <Button
                                 variant="ghost"
@@ -219,21 +219,25 @@ export function ImagePreviewDialog({
                         }}
                     >
                         <AnimatePresence mode="wait">
-                            <motion.img
+                            <motion.div
                                 key={currentImage.id}
-                                src={currentImageUrl}
-                                alt={currentImage.name}
-                                className="max-w-full max-h-full object-contain select-none"
-                                style={{
-                                    transform: `scale(${zoom}) translate(${position.x / zoom}px, ${position.y / zoom}px)`,
-                                    transformOrigin: "center",
-                                }}
+                                className="max-w-full max-h-full"
                                 initial={{ opacity: 0, scale: 0.9 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 exit={{ opacity: 0, scale: 0.9 }}
                                 transition={{ duration: 0.2 }}
-                                draggable={false}
-                            />
+                            >
+                                <img
+                                    src={currentImageUrl}
+                                    alt={currentImage.name}
+                                    className="max-w-full max-h-full object-contain select-none"
+                                    style={{
+                                        transform: `scale(${zoom}) translate(${position.x / zoom}px, ${position.y / zoom}px)`,
+                                        transformOrigin: "center",
+                                    }}
+                                    draggable={false}
+                                />
+                            </motion.div>
                         </AnimatePresence>
                     </div>
 
