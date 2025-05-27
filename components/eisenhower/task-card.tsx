@@ -370,17 +370,39 @@ export function TaskCard({
                                                     {children}
                                                 </a>
                                             ),
-                                            img: ({ src, alt }) => (
-                                                <img
-                                                    src={src}
-                                                    alt={alt}
-                                                    className="max-w-full h-auto rounded border my-2"
-                                                    loading="lazy"
-                                                    onError={(e) => {
-                                                        e.currentTarget.style.display = 'none';
-                                                    }}
-                                                />
-                                            ),
+                                            img: ({ src, alt }) => {
+                                                // Don't render if src is empty, null, or undefined
+                                                if (!src || (typeof src === 'string' && src.trim() === '')) {
+                                                    return (
+                                                        <span className="inline-flex items-center gap-2 px-2 py-1 bg-muted rounded text-xs text-muted-foreground">
+                                                            <ImageIcon className="h-3 w-3" />
+                                                            <span>{alt || 'Image loading...'}</span>
+                                                        </span>
+                                                    );
+                                                }
+
+                                                return (
+                                                    <img
+                                                        src={typeof src === 'string' ? src : URL.createObjectURL(src)}
+                                                        alt={alt || 'Image'}
+                                                        className="max-w-full h-auto rounded border my-2"
+                                                        loading="lazy"
+                                                        onError={(e) => {
+                                                            // Replace with placeholder on error
+                                                            const target = e.currentTarget;
+                                                            const placeholder = document.createElement('span');
+                                                            placeholder.className = 'inline-flex items-center gap-2 px-2 py-1 bg-muted rounded text-xs text-muted-foreground';
+                                                            placeholder.innerHTML = `
+                                                                <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                                                </svg>
+                                                                <span>Failed to load: ${alt || 'Unknown'}</span>
+                                                            `;
+                                                            target.parentNode?.replaceChild(placeholder, target);
+                                                        }}
+                                                    />
+                                                );
+                                            },
                                             code: ({ children }) => (
                                                 <code className="bg-muted px-1 py-0.5 rounded text-xs">
                                                     {children}

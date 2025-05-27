@@ -55,6 +55,7 @@ interface TaskFormProps {
 
 export function TaskForm({ onSubmit, trigger }: TaskFormProps) {
     const [open, setOpen] = useState(false)
+    const [tempTaskId] = useState(() => `temp-${uuidv4()}`)
 
     // Initialize the form with react-hook-form
     const form = useForm<TaskFormValues>({
@@ -81,9 +82,6 @@ export function TaskForm({ onSubmit, trigger }: TaskFormProps) {
         form.reset()
         setOpen(false)
     }
-
-    // Get the current task ID for the form
-    const currentTaskId = form.watch("title") ? uuidv4() : "temp-task-id"
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
@@ -121,7 +119,7 @@ export function TaskForm({ onSubmit, trigger }: TaskFormProps) {
                                     <FormLabel>Description</FormLabel>
                                     <FormControl>
                                         <MarkdownTextarea
-                                            taskId={currentTaskId}
+                                            taskId={tempTaskId}
                                             value={field.value || ""}
                                             onChange={field.onChange}
                                             placeholder="Description of the task (optional) - supports Markdown and image pasting!"

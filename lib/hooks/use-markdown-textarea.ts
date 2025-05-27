@@ -84,8 +84,12 @@ export function useMarkdownTextarea({
 					// Add image to task store using the File directly
 					await addImageToTask(taskId, file);
 
-					// Create image URL and replace placeholder with actual markdown
+					// Create image URL and validate it
 					const imageUrl = imageStorage.createImageUrl(file);
+					if (!imageUrl || imageUrl.trim() === "") {
+						throw new Error("Failed to create image URL");
+					}
+
 					const markdownImage = `![${file.name}](${imageUrl})`;
 
 					const currentValue = textareaRef.current?.value || value;
@@ -140,6 +144,10 @@ export function useMarkdownTextarea({
 					await addImageToTask(taskId, file);
 
 					const imageUrl = imageStorage.createImageUrl(file);
+					if (!imageUrl || imageUrl.trim() === "") {
+						throw new Error("Failed to create image URL");
+					}
+
 					const markdownImage = `![${file.name}](${imageUrl})`;
 
 					const currentValue = textareaRef.current?.value || value;
