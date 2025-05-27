@@ -100,7 +100,7 @@ export function TaskCard({
     const [editedTitle, setEditedTitle] = useState(title);
     const [editedDescription, setEditedDescription] = useState(description || "");
 
-    const { urlCache: imageUrls } = useImageUrls(images);
+    const imageUrls = useImageUrls(images);
 
     const { attributes, listeners, setNodeRef: setDraggableRef, transform, isDragging } =
         useDraggable({

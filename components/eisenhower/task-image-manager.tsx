@@ -23,7 +23,7 @@ export function TaskImageManager({ taskId, images = [] }: TaskImageManagerProps)
     const [isUploading, setIsUploading] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
     const { addImageToTask, removeImageFromTask } = useTaskStore();
-    const { urlCache: imageUrls } = useImageUrls(images);
+    const imageUrls = useImageUrls(images);
 
     // Hook para manejar el paste desde clipboard
     const { pasteFromClipboard, isPasting } = useClipboardPaste({

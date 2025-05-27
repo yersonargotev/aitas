@@ -25,7 +25,7 @@ import type {
     DragOverEvent,
 } from "@dnd-kit/core";
 import { AlertTriangle, CheckCircle2, CircleDot, Trash2 } from "lucide-react";
-import { useEffect } from "react";
+import { useCallback, useEffect, useRef } from "react";
 
 interface Task {
     id: string;
@@ -86,10 +86,12 @@ export function Matrix() {
 
     const { selectedProjectId } = useProjectStore();
     const isImageStorageInitialized = useImageInitializer();
+    const hasRefreshedRef = useRef(false);
 
-    // Refrescar imágenes cuando se inicializa el storage
+    // Refrescar imágenes cuando se inicializa el storage (solo una vez)
     useEffect(() => {
-        if (isImageStorageInitialized) {
+        if (isImageStorageInitialized && !hasRefreshedRef.current) {
+            hasRefreshedRef.current = true;
             refreshTaskImages();
         }
     }, [isImageStorageInitialized, refreshTaskImages]);

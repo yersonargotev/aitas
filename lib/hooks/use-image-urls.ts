@@ -12,7 +12,6 @@ export function useImageUrls(images: TaskImage[] = []) {
 	const urlCacheRef = useRef<ImageUrlCache>({});
 	const imagesMapRef = useRef<Map<string, TaskImage>>(new Map());
 	const [urlCache, setUrlCache] = useState<ImageUrlCache>({});
-	const [isLoading, setIsLoading] = useState(false);
 
 	// Crear mapa de imágenes por ID para acceso rápido
 	const imageIds = useMemo(() => {
@@ -26,13 +25,7 @@ export function useImageUrls(images: TaskImage[] = []) {
 
 	// Crear/actualizar URLs cuando cambian los IDs de las imágenes
 	useEffect(() => {
-		const updateUrls = async () => {
-			if (imageIds.length === 0) {
-				setUrlCache({});
-				return;
-			}
-
-			setIsLoading(true);
+		const updateUrls = () => {
 			const currentCache = { ...urlCacheRef.current };
 			const currentImageIds = new Set(imageIds);
 			let hasChanges = false;
@@ -67,13 +60,21 @@ export function useImageUrls(images: TaskImage[] = []) {
 				}
 			}
 
-			// Actualizar la referencia y el estado si hay cambios
+			// Actualizar la referencia y el estado solo si hay cambios
 			if (hasChanges) {
 				urlCacheRef.current = currentCache;
-				setUrlCache({ ...currentCache });
-			}
+				// Usar una función de callback para evitar dependencias circulares
+				setUrlCache((prev) => {
+					// Solo actualizar si realmente hay diferencias
+					const hasRealChanges =
+						Object.keys(currentCache).length !== Object.keys(prev).length ||
+						Object.keys(currentCache).some(
+							(key) => currentCache[key] !== prev[key],
+						);
 
-			setIsLoading(false);
+					return hasRealChanges ? { ...currentCache } : prev;
+				});
+			}
 		};
 
 		updateUrls();
@@ -92,7 +93,7 @@ export function useImageUrls(images: TaskImage[] = []) {
 		};
 	}, []);
 
-	return { urlCache, isLoading };
+	return urlCache;
 }
 
 // Hook para inicializar las imágenes al cargar la aplicación

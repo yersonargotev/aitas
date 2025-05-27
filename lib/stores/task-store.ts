@@ -456,7 +456,6 @@ export const useTaskStore = create<TaskState & TaskActions>()(
 						await imageStorage.init();
 
 						// Load images for existing tasks from IndexedDB
-						let hasUpdatedImages = false;
 						for (const task of state.tasks) {
 							if (task.id) {
 								try {
@@ -470,7 +469,6 @@ export const useTaskStore = create<TaskState & TaskActions>()(
 											type: record.type,
 											createdAt: record.createdAt,
 										}));
-										hasUpdatedImages = true;
 									}
 								} catch (error) {
 									console.warn(
@@ -479,18 +477,6 @@ export const useTaskStore = create<TaskState & TaskActions>()(
 									);
 								}
 							}
-						}
-
-						// Si se cargaron imágenes, forzar una actualización del estado
-						if (hasUpdatedImages) {
-							// Usar setTimeout para asegurar que la rehidratación esté completa
-							setTimeout(() => {
-								const currentState = useTaskStore.getState();
-								useTaskStore.setState({
-									...currentState,
-									tasks: [...state.tasks], // Forzar re-render
-								});
-							}, 100);
 						}
 					} catch (error) {
 						console.error("Failed to initialize image storage:", error);
