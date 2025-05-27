@@ -19,7 +19,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { useTaskStore } from "@/lib/stores/task-store";
+import { useImageUrls } from "@/lib/hooks/use-image-urls";
 import type { TaskImage, TaskPriority } from "@/lib/stores/types";
 import { cn } from "@/lib/utils";
 import { useDraggable, useDroppable } from "@dnd-kit/core";
@@ -100,7 +100,7 @@ export function TaskCard({
     const [editedTitle, setEditedTitle] = useState(title);
     const [editedDescription, setEditedDescription] = useState(description || "");
 
-    const { getImageUrl } = useTaskStore();
+    const imageUrls = useImageUrls(images);
 
     const { attributes, listeners, setNodeRef: setDraggableRef, transform, isDragging } =
         useDraggable({
@@ -397,7 +397,7 @@ export function TaskCard({
                                     </div>
                                     <div className="grid grid-cols-2 gap-2">
                                         {images.slice(0, 4).map((image) => {
-                                            const imageUrl = getImageUrl(image.id, image.file);
+                                            const imageUrl = imageUrls[image.id] || "";
                                             return (
                                                 <div key={image.id} className="aspect-square rounded overflow-hidden border shadow-sm">
                                                     <img

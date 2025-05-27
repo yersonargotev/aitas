@@ -3,6 +3,7 @@
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { useClipboardPaste } from '@/lib/hooks/use-clipboard-paste';
+import { useImageUrls } from '@/lib/hooks/use-image-urls';
 import { useTaskStore } from '@/lib/stores/task-store';
 import type { TaskImage } from '@/lib/stores/types';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -20,7 +21,8 @@ export function TaskImageManager({ taskId, images = [] }: TaskImageManagerProps)
     const [showClipboardHint, setShowClipboardHint] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
-    const { addImageToTask, removeImageFromTask, getImageUrl, revokeImageUrl } = useTaskStore();
+    const { addImageToTask, removeImageFromTask } = useTaskStore();
+    const imageUrls = useImageUrls(images);
 
     // Hook para manejar el paste desde clipboard
     const { pasteFromClipboard, isPasting } = useClipboardPaste({
@@ -92,7 +94,6 @@ export function TaskImageManager({ taskId, images = [] }: TaskImageManagerProps)
 
     const handleRemoveImage = async (imageId: string) => {
         await removeImageFromTask(taskId, imageId);
-        revokeImageUrl(imageId);
     };
 
     const handleKeyDown = (event: React.KeyboardEvent) => {
@@ -221,7 +222,7 @@ export function TaskImageManager({ taskId, images = [] }: TaskImageManagerProps)
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                         <AnimatePresence>
                             {images.map((image) => {
-                                const imageUrl = getImageUrl(image.id, image.file);
+                                const imageUrl = imageUrls[image.id];
 
                                 return (
                                     <motion.div

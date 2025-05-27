@@ -41,7 +41,6 @@ export interface TaskState {
 	selectedTaskIds: string[];
 	isLoading: boolean;
 	error: string | null;
-	imageUrls: Map<string, string>;
 	filters: {
 		priority: TaskPriority | "all";
 		status: "all" | "completed" | "pending";
@@ -78,8 +77,6 @@ export interface TaskActions {
 	addImageToTask: (taskId: string, file: File) => Promise<void>;
 	removeImageFromTask: (taskId: string, imageId: string) => Promise<void>;
 	getTaskImages: (taskId: string) => Promise<TaskImage[]>;
-	getImageUrl: (imageId: string, file: File) => string;
-	revokeImageUrl: (imageId: string) => void;
 
 	// Filter management
 	setFilter: (

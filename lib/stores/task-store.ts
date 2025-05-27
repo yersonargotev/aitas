@@ -18,7 +18,6 @@ const initialState = {
 	selectedTaskIds: [],
 	isLoading: false,
 	error: null,
-	imageUrls: new Map<string, string>(),
 	filters: {
 		priority: "all" as const,
 		status: "all" as const,
@@ -119,19 +118,6 @@ export const useTaskStore = create<TaskState & TaskActions>()(
 					// Eliminar imágenes asociadas de IndexedDB
 					await imageStorage.deleteImagesByTaskId(taskId);
 
-					// Limpiar URLs de imágenes del cache
-					const state = get();
-					const task = state.tasks.find((t) => t.id === taskId);
-					if (task?.images) {
-						for (const img of task.images) {
-							const url = state.imageUrls.get(img.id);
-							if (url) {
-								imageStorage.revokeImageUrl(url);
-								state.imageUrls.delete(img.id);
-							}
-						}
-					}
-
 					set((state) => {
 						const filteredTasks = state.tasks.filter(
 							(task) => task.id !== taskId,
@@ -142,7 +128,6 @@ export const useTaskStore = create<TaskState & TaskActions>()(
 							selectedTaskIds: state.selectedTaskIds.filter(
 								(id) => id !== taskId,
 							),
-							imageUrls: new Map(state.imageUrls),
 							error: null,
 						};
 					});
@@ -323,14 +308,6 @@ export const useTaskStore = create<TaskState & TaskActions>()(
 					// Eliminar de IndexedDB
 					await imageStorage.deleteImage(imageId);
 
-					// Limpiar URL si existe
-					const state = get();
-					const url = state.imageUrls.get(imageId);
-					if (url) {
-						imageStorage.revokeImageUrl(url);
-						state.imageUrls.delete(imageId);
-					}
-
 					// Actualizar el estado
 					set((state) => ({
 						tasks: state.tasks.map((task) =>
@@ -342,7 +319,6 @@ export const useTaskStore = create<TaskState & TaskActions>()(
 									}
 								: task,
 						),
-						imageUrls: new Map(state.imageUrls),
 						error: null,
 					}));
 				} catch (error) {
@@ -369,30 +345,6 @@ export const useTaskStore = create<TaskState & TaskActions>()(
 				} catch (error) {
 					console.error("Error getting task images:", error);
 					return [];
-				}
-			},
-
-			getImageUrl: (imageId: string, file: File) => {
-				const state = get();
-				let url = state.imageUrls.get(imageId);
-
-				if (!url) {
-					url = imageStorage.createImageUrl(file);
-					state.imageUrls.set(imageId, url);
-					set({ imageUrls: new Map(state.imageUrls) });
-				}
-
-				return url;
-			},
-
-			revokeImageUrl: (imageId: string) => {
-				const state = get();
-				const url = state.imageUrls.get(imageId);
-
-				if (url) {
-					imageStorage.revokeImageUrl(url);
-					state.imageUrls.delete(imageId);
-					set({ imageUrls: new Map(state.imageUrls) });
 				}
 			},
 
@@ -480,9 +432,6 @@ export const useTaskStore = create<TaskState & TaskActions>()(
 					if (validTasks.length !== state.tasks.length) {
 						state.tasks = validTasks;
 					}
-
-					// Initialize imageUrls map
-					state.imageUrls = new Map();
 				}
 			},
 		},
