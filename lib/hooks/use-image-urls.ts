@@ -2,7 +2,7 @@
 
 import { imageStorage } from "@/lib/stores/image-storage";
 import type { TaskImage } from "@/lib/stores/types";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 interface ImageUrlCache {
 	[imageId: string]: string;
@@ -11,6 +11,7 @@ interface ImageUrlCache {
 export function useImageUrls(images: TaskImage[] = []) {
 	const urlCacheRef = useRef<ImageUrlCache>({});
 	const imagesMapRef = useRef<Map<string, TaskImage>>(new Map());
+	const [urlCache, setUrlCache] = useState<ImageUrlCache>({});
 
 	// Crear mapa de imágenes por ID para acceso rápido
 	const imageIds = useMemo(() => {
@@ -23,34 +24,47 @@ export function useImageUrls(images: TaskImage[] = []) {
 	}, [images]);
 
 	// Crear/actualizar URLs cuando cambian los IDs de las imágenes
-	const urlCache = useMemo(() => {
-		const currentCache = { ...urlCacheRef.current };
-		const currentImageIds = new Set(imageIds);
+	useEffect(() => {
+		const updateUrls = () => {
+			const currentCache = { ...urlCacheRef.current };
+			const currentImageIds = new Set(imageIds);
+			let hasChanges = false;
 
-		// Limpiar URLs de imágenes que ya no existen
-		for (const cachedImageId of Object.keys(currentCache)) {
-			if (!currentImageIds.has(cachedImageId)) {
-				const url = currentCache[cachedImageId];
-				if (url) {
-					imageStorage.revokeImageUrl(url);
-					delete currentCache[cachedImageId];
+			// Limpiar URLs de imágenes que ya no existen
+			for (const cachedImageId of Object.keys(currentCache)) {
+				if (!currentImageIds.has(cachedImageId)) {
+					const url = currentCache[cachedImageId];
+					if (url) {
+						imageStorage.revokeImageUrl(url);
+						delete currentCache[cachedImageId];
+						hasChanges = true;
+					}
 				}
 			}
-		}
 
-		// Crear URLs para nuevas imágenes
-		for (const imageId of imageIds) {
-			if (!currentCache[imageId]) {
-				const image = imagesMapRef.current.get(imageId);
-				if (image) {
-					currentCache[imageId] = imageStorage.createImageUrl(image.file);
+			// Crear URLs para nuevas imágenes
+			for (const imageId of imageIds) {
+				if (!currentCache[imageId]) {
+					const image = imagesMapRef.current.get(imageId);
+					if (image?.file) {
+						try {
+							currentCache[imageId] = imageStorage.createImageUrl(image.file);
+							hasChanges = true;
+						} catch (error) {
+							console.warn(`Failed to create URL for image ${imageId}:`, error);
+						}
+					}
 				}
 			}
-		}
 
-		// Actualizar la referencia
-		urlCacheRef.current = currentCache;
-		return currentCache;
+			// Actualizar la referencia y el estado si hay cambios
+			if (hasChanges) {
+				urlCacheRef.current = currentCache;
+				setUrlCache({ ...currentCache });
+			}
+		};
+
+		updateUrls();
 	}, [imageIds]);
 
 	// Limpiar todas las URLs al desmontar el componente
@@ -58,10 +72,33 @@ export function useImageUrls(images: TaskImage[] = []) {
 		return () => {
 			const currentCache = urlCacheRef.current;
 			for (const url of Object.values(currentCache)) {
-				imageStorage.revokeImageUrl(url);
+				if (url) {
+					imageStorage.revokeImageUrl(url);
+				}
 			}
+			urlCacheRef.current = {};
 		};
 	}, []);
 
 	return urlCache;
+}
+
+// Hook para inicializar las imágenes al cargar la aplicación
+export function useImageInitializer() {
+	const [isInitialized, setIsInitialized] = useState(false);
+
+	useEffect(() => {
+		const initializeImages = async () => {
+			try {
+				await imageStorage.init();
+				setIsInitialized(true);
+			} catch (error) {
+				console.error("Failed to initialize image storage:", error);
+			}
+		};
+
+		initializeImages();
+	}, []);
+
+	return isInitialized;
 }

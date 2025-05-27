@@ -15,6 +15,7 @@ import {
     AccordionItem,
     AccordionTrigger
 } from "@/components/ui/accordion";
+import { useImageInitializer } from "@/lib/hooks/use-image-urls";
 import { useProjectStore } from "@/lib/stores/project-store";
 import { useTaskStore } from "@/lib/stores/task-store";
 import type { TaskPriority } from "@/lib/stores/types";
@@ -24,6 +25,7 @@ import type {
     DragOverEvent,
 } from "@dnd-kit/core";
 import { AlertTriangle, CheckCircle2, CircleDot, Trash2 } from "lucide-react";
+import { useEffect } from "react";
 
 interface Task {
     id: string;
@@ -79,9 +81,18 @@ export function Matrix() {
         moveTask,
         toggleTaskCompletion,
         reorderTasks,
+        refreshTaskImages,
     } = useTaskStore();
 
     const { selectedProjectId } = useProjectStore();
+    const isImageStorageInitialized = useImageInitializer();
+
+    // Refrescar imágenes cuando se inicializa el storage
+    useEffect(() => {
+        if (isImageStorageInitialized) {
+            refreshTaskImages();
+        }
+    }, [isImageStorageInitialized, refreshTaskImages]);
 
     const handleDragOver = (event: DragOverEvent) => {
         const { active, over } = event;

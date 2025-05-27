@@ -77,6 +77,7 @@ export interface TaskActions {
 	addImageToTask: (taskId: string, file: File) => Promise<void>;
 	removeImageFromTask: (taskId: string, imageId: string) => Promise<void>;
 	getTaskImages: (taskId: string) => Promise<TaskImage[]>;
+	refreshTaskImages: () => Promise<void>;
 
 	// Filter management
 	setFilter: (

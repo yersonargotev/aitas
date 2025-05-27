@@ -98,7 +98,16 @@ export const useTaskStore = create<TaskState & TaskActions>()(
 					set((state) => {
 						const updatedTasks = state.tasks.map((task) =>
 							task.id === taskId
-								? { ...task, ...updates, updatedAt: new Date() }
+								? {
+										...task,
+										...updates,
+										updatedAt: new Date(),
+										// Preservar explícitamente las imágenes si no se están actualizando
+										images:
+											updates.images !== undefined
+												? updates.images
+												: task.images || [],
+									}
 								: task,
 						);
 						return {
@@ -143,7 +152,13 @@ export const useTaskStore = create<TaskState & TaskActions>()(
 					set((state) => {
 						const updatedTasks = state.tasks.map((task) =>
 							task.id === taskId
-								? { ...task, priority: newPriority, updatedAt: new Date() }
+								? {
+										...task,
+										priority: newPriority,
+										updatedAt: new Date(),
+										// Preservar explícitamente las imágenes
+										images: task.images || [],
+									}
 								: task,
 						);
 						return {
@@ -177,8 +192,10 @@ export const useTaskStore = create<TaskState & TaskActions>()(
 						if (task.priority !== overTask.priority) return state;
 
 						const updatedTasks = [...state.tasks];
+						// Preservar las imágenes al reordenar
+						const taskWithImages = { ...task, images: task.images || [] };
 						updatedTasks.splice(taskIndex, 1);
-						updatedTasks.splice(overTaskIndex, 0, task);
+						updatedTasks.splice(overTaskIndex, 0, taskWithImages);
 
 						return {
 							tasks: updatedTasks,
@@ -197,7 +214,13 @@ export const useTaskStore = create<TaskState & TaskActions>()(
 					set((state) => {
 						const updatedTasks = state.tasks.map((task) =>
 							task.id === taskId
-								? { ...task, completed: !task.completed, updatedAt: new Date() }
+								? {
+										...task,
+										completed: !task.completed,
+										updatedAt: new Date(),
+										// Preservar explícitamente las imágenes
+										images: task.images || [],
+									}
 								: task,
 						);
 						return {
@@ -348,6 +371,49 @@ export const useTaskStore = create<TaskState & TaskActions>()(
 				}
 			},
 
+			// Método para refrescar las imágenes de todas las tareas desde IndexedDB
+			refreshTaskImages: async () => {
+				try {
+					if (!imageStorage.db) {
+						await imageStorage.init();
+					}
+
+					const state = get();
+					const updatedTasks = await Promise.all(
+						state.tasks.map(async (task) => {
+							try {
+								const images = await imageStorage.getImagesByTaskId(task.id);
+								return {
+									...task,
+									images: images.map((record) => ({
+										id: record.id,
+										file: record.file,
+										name: record.name,
+										size: record.size,
+										type: record.type,
+										createdAt: record.createdAt,
+									})),
+								};
+							} catch (error) {
+								console.warn(
+									`Failed to refresh images for task ${task.id}:`,
+									error,
+								);
+								return task;
+							}
+						}),
+					);
+
+					set({
+						tasks: updatedTasks,
+						error: null,
+					});
+				} catch (error) {
+					console.error("Error refreshing task images:", error);
+					set({ error: "Error refreshing task images" });
+				}
+			},
+
 			// Filter management
 			setFilter: (
 				filterType: "priority" | "status" | "projectId",
@@ -390,6 +456,7 @@ export const useTaskStore = create<TaskState & TaskActions>()(
 						await imageStorage.init();
 
 						// Load images for existing tasks from IndexedDB
+						let hasUpdatedImages = false;
 						for (const task of state.tasks) {
 							if (task.id) {
 								try {
@@ -403,6 +470,7 @@ export const useTaskStore = create<TaskState & TaskActions>()(
 											type: record.type,
 											createdAt: record.createdAt,
 										}));
+										hasUpdatedImages = true;
 									}
 								} catch (error) {
 									console.warn(
@@ -411,6 +479,18 @@ export const useTaskStore = create<TaskState & TaskActions>()(
 									);
 								}
 							}
+						}
+
+						// Si se cargaron imágenes, forzar una actualización del estado
+						if (hasUpdatedImages) {
+							// Usar setTimeout para asegurar que la rehidratación esté completa
+							setTimeout(() => {
+								const currentState = useTaskStore.getState();
+								useTaskStore.setState({
+									...currentState,
+									tasks: [...state.tasks], // Forzar re-render
+								});
+							}, 100);
 						}
 					} catch (error) {
 						console.error("Failed to initialize image storage:", error);
