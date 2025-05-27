@@ -5,6 +5,15 @@ export type TaskPriority =
 	| "eliminate"
 	| "unclassified";
 
+export interface TaskImage {
+	id: string;
+	file: File;
+	name: string;
+	size: number;
+	type: string;
+	createdAt: Date;
+}
+
 export interface Project {
 	id: string;
 	name: string;
@@ -22,6 +31,7 @@ export interface Task {
 	projectId?: string;
 	dueDate?: Date;
 	completed?: boolean;
+	images?: TaskImage[];
 	createdAt: Date;
 	updatedAt: Date;
 }
@@ -31,6 +41,7 @@ export interface TaskState {
 	selectedTaskIds: string[];
 	isLoading: boolean;
 	error: string | null;
+	imageUrls: Map<string, string>;
 	filters: {
 		priority: TaskPriority | "all";
 		status: "all" | "completed" | "pending";
@@ -62,6 +73,13 @@ export interface TaskActions {
 	selectTask: (taskId: string) => void;
 	deselectTask: (taskId: string) => void;
 	clearSelectedTasks: () => void;
+
+	// Image management
+	addImageToTask: (taskId: string, file: File) => Promise<void>;
+	removeImageFromTask: (taskId: string, imageId: string) => Promise<void>;
+	getTaskImages: (taskId: string) => Promise<TaskImage[]>;
+	getImageUrl: (imageId: string, file: File) => string;
+	revokeImageUrl: (imageId: string) => void;
 
 	// Filter management
 	setFilter: (

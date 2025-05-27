@@ -19,15 +19,17 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import type { TaskPriority } from "@/lib/stores/types";
+import { useTaskStore } from "@/lib/stores/task-store";
+import type { TaskImage, TaskPriority } from "@/lib/stores/types";
 import { cn } from "@/lib/utils";
 import { useDraggable, useDroppable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import { AnimatePresence, motion } from "framer-motion";
-import { Calendar, Pencil, Trash2 } from "lucide-react";
+import { Calendar, ImageIcon, Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { TaskImageManager } from "./task-image-manager";
 
 interface TaskCardProps {
     id: string;
@@ -36,6 +38,7 @@ interface TaskCardProps {
     priority: TaskPriority;
     dueDate?: Date;
     completed?: boolean;
+    images?: TaskImage[];
     onEdit?: (updates?: { title?: string; description?: string }) => void;
     onDelete?: () => void;
     onToggleComplete?: () => void;
@@ -86,6 +89,7 @@ export function TaskCard({
     priority,
     dueDate,
     completed = false,
+    images = [],
     onEdit,
     onDelete,
     onToggleComplete,
@@ -95,6 +99,8 @@ export function TaskCard({
     const [isEditing, setIsEditing] = useState(false);
     const [editedTitle, setEditedTitle] = useState(title);
     const [editedDescription, setEditedDescription] = useState(description || "");
+
+    const { getImageUrl } = useTaskStore();
 
     const { attributes, listeners, setNodeRef: setDraggableRef, transform, isDragging } =
         useDraggable({
@@ -297,6 +303,19 @@ export function TaskCard({
                             placeholder="Add a description... (Supports Markdown)"
                             className="min-h-[80px] resize-none w-full mt-2"
                         />
+
+                        {/* TaskImageManager para manejar imágenes en modo edición */}
+                        <div className="border-t pt-3">
+                            <h5 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                                <ImageIcon className="h-4 w-4" />
+                                Images
+                            </h5>
+                            <TaskImageManager
+                                taskId={id}
+                                images={images}
+                            />
+                        </div>
+
                         <div className="flex justify-end gap-2">
                             <Button
                                 variant="outline"
@@ -363,6 +382,48 @@ export function TaskCard({
                                     >
                                         {description}
                                     </ReactMarkdown>
+                                </div>
+                            </CardContent>
+                        )}
+
+                        {/* Mostrar imágenes en modo lectura */}
+                        {images && images.length > 0 && (
+                            <CardContent className="p-3 pt-0">
+                                <div className="space-y-2">
+                                    {!description && <div className="border-t" />}
+                                    <div className="flex items-center gap-2 text-xs text-gray-600">
+                                        <ImageIcon className="h-3 w-3" />
+                                        <span>{images.length} {images.length === 1 ? 'image' : 'images'}</span>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        {images.slice(0, 4).map((image) => {
+                                            const imageUrl = getImageUrl(image.id, image.file);
+                                            return (
+                                                <div key={image.id} className="aspect-square rounded overflow-hidden border shadow-sm">
+                                                    <img
+                                                        src={imageUrl}
+                                                        alt={image.name}
+                                                        className={cn(
+                                                            "w-full h-full object-cover transition-opacity",
+                                                            { "opacity-50": completed }
+                                                        )}
+                                                        loading="lazy"
+                                                    />
+                                                </div>
+                                            );
+                                        })}
+                                        {images.length > 4 && (
+                                            <div className={cn(
+                                                "aspect-square rounded bg-gray-100 flex items-center justify-center text-sm border",
+                                                { "opacity-50": completed }
+                                            )}>
+                                                <div className="text-center text-gray-500">
+                                                    <ImageIcon className="h-4 w-4 mx-auto mb-1" />
+                                                    <span className="text-xs">+{images.length - 4}</span>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             </CardContent>
                         )}

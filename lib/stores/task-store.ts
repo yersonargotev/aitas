@@ -3,7 +3,14 @@
 import { v4 as uuidv4 } from "uuid";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
-import type { Task, TaskActions, TaskPriority, TaskState } from "./types";
+import { imageStorage } from "./image-storage";
+import type {
+	Task,
+	TaskActions,
+	TaskImage,
+	TaskPriority,
+	TaskState,
+} from "./types";
 
 // Initial state
 const initialState = {
@@ -11,6 +18,7 @@ const initialState = {
 	selectedTaskIds: [],
 	isLoading: false,
 	error: null,
+	imageUrls: new Map<string, string>(),
 	filters: {
 		priority: "all" as const,
 		status: "all" as const,
@@ -59,7 +67,7 @@ const calculateStatistics = (tasks: Task[]) => {
 // Create the store with persist middleware
 export const useTaskStore = create<TaskState & TaskActions>()(
 	persist(
-		(set) => ({
+		(set, get) => ({
 			// Initial state
 			...initialState,
 
@@ -106,8 +114,24 @@ export const useTaskStore = create<TaskState & TaskActions>()(
 				}
 			},
 
-			deleteTask: (taskId) => {
+			deleteTask: async (taskId) => {
 				try {
+					// Eliminar imágenes asociadas de IndexedDB
+					await imageStorage.deleteImagesByTaskId(taskId);
+
+					// Limpiar URLs de imágenes del cache
+					const state = get();
+					const task = state.tasks.find((t) => t.id === taskId);
+					if (task?.images) {
+						for (const img of task.images) {
+							const url = state.imageUrls.get(img.id);
+							if (url) {
+								imageStorage.revokeImageUrl(url);
+								state.imageUrls.delete(img.id);
+							}
+						}
+					}
+
 					set((state) => {
 						const filteredTasks = state.tasks.filter(
 							(task) => task.id !== taskId,
@@ -118,6 +142,7 @@ export const useTaskStore = create<TaskState & TaskActions>()(
 							selectedTaskIds: state.selectedTaskIds.filter(
 								(id) => id !== taskId,
 							),
+							imageUrls: new Map(state.imageUrls),
 							error: null,
 						};
 					});
@@ -238,6 +263,139 @@ export const useTaskStore = create<TaskState & TaskActions>()(
 				}
 			},
 
+			// Image management actions
+			addImageToTask: async (taskId: string, file: File) => {
+				try {
+					// Inicializar ImageStorage si no está listo
+					if (!imageStorage.db) {
+						await imageStorage.init();
+					}
+
+					// Validar tamaño del archivo (10MB max)
+					const maxSize = 10 * 1024 * 1024; // 10MB
+					if (file.size > maxSize) {
+						throw new Error("File size exceeds 10MB limit");
+					}
+
+					// Validar tipo de archivo
+					if (!file.type.startsWith("image/")) {
+						throw new Error("File must be an image");
+					}
+
+					// Guardar imagen en IndexedDB
+					const imageRecord = await imageStorage.saveImage(taskId, file);
+
+					// Crear TaskImage para el estado de Zustand
+					const taskImage: TaskImage = {
+						id: imageRecord.id,
+						file: imageRecord.file,
+						name: imageRecord.name,
+						size: imageRecord.size,
+						type: imageRecord.type,
+						createdAt: imageRecord.createdAt,
+					};
+
+					// Actualizar la tarea en el estado
+					set((state) => ({
+						tasks: state.tasks.map((task) =>
+							task.id === taskId
+								? {
+										...task,
+										images: [...(task.images || []), taskImage],
+										updatedAt: new Date(),
+									}
+								: task,
+						),
+						error: null,
+					}));
+				} catch (error) {
+					console.error("Error adding image to task:", error);
+					const errorMessage =
+						error instanceof Error
+							? error.message
+							: "Error adding image to task";
+					set({ error: errorMessage });
+				}
+			},
+
+			removeImageFromTask: async (taskId: string, imageId: string) => {
+				try {
+					// Eliminar de IndexedDB
+					await imageStorage.deleteImage(imageId);
+
+					// Limpiar URL si existe
+					const state = get();
+					const url = state.imageUrls.get(imageId);
+					if (url) {
+						imageStorage.revokeImageUrl(url);
+						state.imageUrls.delete(imageId);
+					}
+
+					// Actualizar el estado
+					set((state) => ({
+						tasks: state.tasks.map((task) =>
+							task.id === taskId
+								? {
+										...task,
+										images: task.images?.filter((img) => img.id !== imageId),
+										updatedAt: new Date(),
+									}
+								: task,
+						),
+						imageUrls: new Map(state.imageUrls),
+						error: null,
+					}));
+				} catch (error) {
+					console.error("Error removing image from task:", error);
+					set({ error: "Error removing image from task" });
+				}
+			},
+
+			getTaskImages: async (taskId: string) => {
+				try {
+					if (!imageStorage.db) {
+						await imageStorage.init();
+					}
+
+					const imageRecords = await imageStorage.getImagesByTaskId(taskId);
+					return imageRecords.map((record) => ({
+						id: record.id,
+						file: record.file,
+						name: record.name,
+						size: record.size,
+						type: record.type,
+						createdAt: record.createdAt,
+					}));
+				} catch (error) {
+					console.error("Error getting task images:", error);
+					return [];
+				}
+			},
+
+			getImageUrl: (imageId: string, file: File) => {
+				const state = get();
+				let url = state.imageUrls.get(imageId);
+
+				if (!url) {
+					url = imageStorage.createImageUrl(file);
+					state.imageUrls.set(imageId, url);
+					set({ imageUrls: new Map(state.imageUrls) });
+				}
+
+				return url;
+			},
+
+			revokeImageUrl: (imageId: string) => {
+				const state = get();
+				const url = state.imageUrls.get(imageId);
+
+				if (url) {
+					imageStorage.revokeImageUrl(url);
+					state.imageUrls.delete(imageId);
+					set({ imageUrls: new Map(state.imageUrls) });
+				}
+			},
+
 			// Filter management
 			setFilter: (
 				filterType: "priority" | "status" | "projectId",
@@ -264,7 +422,7 @@ export const useTaskStore = create<TaskState & TaskActions>()(
 		{
 			name: "eisenhower-matrix-storage", // unique name for localStorage
 			storage: createJSONStorage(() => localStorage),
-			// Only persist these parts of the state
+			// Only persist these parts of the state (excluding imageUrls as they are temporary)
 			partialize: (state) => ({
 				tasks: state.tasks,
 				selectedTaskIds: state.selectedTaskIds,
@@ -272,9 +430,40 @@ export const useTaskStore = create<TaskState & TaskActions>()(
 				statistics: state.statistics,
 			}),
 			// Handle errors during storage operations
-			onRehydrateStorage: () => (state) => {
+			onRehydrateStorage: () => async (state) => {
 				// This function runs after rehydration
 				if (state) {
+					// Initialize image storage
+					try {
+						await imageStorage.init();
+
+						// Load images for existing tasks from IndexedDB
+						for (const task of state.tasks) {
+							if (task.id) {
+								try {
+									const images = await imageStorage.getImagesByTaskId(task.id);
+									if (images.length > 0) {
+										task.images = images.map((record) => ({
+											id: record.id,
+											file: record.file,
+											name: record.name,
+											size: record.size,
+											type: record.type,
+											createdAt: record.createdAt,
+										}));
+									}
+								} catch (error) {
+									console.warn(
+										`Failed to load images for task ${task.id}:`,
+										error,
+									);
+								}
+							}
+						}
+					} catch (error) {
+						console.error("Failed to initialize image storage:", error);
+					}
+
 					// Validate tasks after rehydration
 					const validTasks = state.tasks.filter((task) => {
 						// Ensure all required fields are present
@@ -291,6 +480,9 @@ export const useTaskStore = create<TaskState & TaskActions>()(
 					if (validTasks.length !== state.tasks.length) {
 						state.tasks = validTasks;
 					}
+
+					// Initialize imageUrls map
+					state.imageUrls = new Map();
 				}
 			},
 		},
