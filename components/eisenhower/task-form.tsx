@@ -26,8 +26,8 @@ import {
     FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
+import { MarkdownTextarea } from "@/components/ui/markdown-textarea"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Textarea } from "@/components/ui/textarea"
 import { ActionButton } from "./action-button"
 
 // Define the task schema with zod
@@ -82,6 +82,9 @@ export function TaskForm({ onSubmit, trigger }: TaskFormProps) {
         setOpen(false)
     }
 
+    // Get the current task ID for the form
+    const currentTaskId = form.watch("title") ? uuidv4() : "temp-task-id"
+
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
@@ -117,10 +120,15 @@ export function TaskForm({ onSubmit, trigger }: TaskFormProps) {
                                 <FormItem>
                                     <FormLabel>Description</FormLabel>
                                     <FormControl>
-                                        <Textarea
-                                            placeholder="Description of the task (optional)"
+                                        <MarkdownTextarea
+                                            taskId={currentTaskId}
+                                            value={field.value || ""}
+                                            onChange={field.onChange}
+                                            placeholder="Description of the task (optional) - supports Markdown and image pasting!"
                                             className="resize-none"
-                                            {...field}
+                                            onImageUpload={(imageId) => {
+                                                console.log('Image uploaded to new task:', imageId);
+                                            }}
                                         />
                                     </FormControl>
                                     <FormMessage />

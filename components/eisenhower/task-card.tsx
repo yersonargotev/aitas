@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { MarkdownTextarea } from "@/components/ui/markdown-textarea";
 import { useImageUrls } from "@/lib/hooks/use-image-urls";
 import type { TaskImage, TaskPriority } from "@/lib/stores/types";
 import { cn } from "@/lib/utils";
@@ -304,12 +304,16 @@ export function TaskCard({
 
                 {isEditing ? (
                     <CardContent className="p-3 pt-0 space-y-4">
-                        <Textarea
+                        <MarkdownTextarea
+                            taskId={id}
                             value={editedDescription}
-                            onChange={(e) => setEditedDescription(e.target.value)}
+                            onChange={setEditedDescription}
                             onKeyDown={handleKeyDown}
-                            placeholder="Add a description... (Supports Markdown)"
+                            placeholder="Add a description... (Supports Markdown - paste images directly!)"
                             className="min-h-[80px] resize-none w-full mt-2"
+                            onImageUpload={(imageId) => {
+                                console.log('Image uploaded:', imageId);
+                            }}
                         />
 
                         {/* TaskImageManager para manejar imágenes en modo edición */}
@@ -365,6 +369,17 @@ export function TaskCard({
                                                 >
                                                     {children}
                                                 </a>
+                                            ),
+                                            img: ({ src, alt }) => (
+                                                <img
+                                                    src={src}
+                                                    alt={alt}
+                                                    className="max-w-full h-auto rounded border my-2"
+                                                    loading="lazy"
+                                                    onError={(e) => {
+                                                        e.currentTarget.style.display = 'none';
+                                                    }}
+                                                />
                                             ),
                                             code: ({ children }) => (
                                                 <code className="bg-muted px-1 py-0.5 rounded text-xs">

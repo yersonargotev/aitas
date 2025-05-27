@@ -25,7 +25,7 @@ import type {
     DragOverEvent,
 } from "@dnd-kit/core";
 import { AlertTriangle, CheckCircle2, CircleDot, Trash2 } from "lucide-react";
-import { useCallback, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 
 interface Task {
     id: string;
