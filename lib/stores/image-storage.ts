@@ -1,5 +1,7 @@
 "use client";
 
+import { nanoid } from "nanoid";
+
 export interface ImageRecord {
 	id: string;
 	taskId: string;
@@ -44,7 +46,7 @@ class ImageStorageService {
 		if (!this.db) throw new Error("Database not initialized");
 
 		const imageRecord: ImageRecord = {
-			id: `${taskId}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+			id: nanoid(),
 			taskId,
 			file,
 			name: file.name,
