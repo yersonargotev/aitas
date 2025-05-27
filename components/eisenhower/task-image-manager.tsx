@@ -10,6 +10,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Clipboard, Info, Upload, X } from 'lucide-react';
 import { ImageIcon } from 'lucide-react';
 import { useRef, useState } from 'react';
+import { ImagePreviewDialog } from './image-preview-dialog';
 
 interface TaskImageManagerProps {
     taskId: string;
@@ -21,6 +22,8 @@ export function TaskImageManager({ taskId, images = [] }: TaskImageManagerProps)
     const [isDragOver, setIsDragOver] = useState(false);
     const [showClipboardHint, setShowClipboardHint] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
+    const [previewOpen, setPreviewOpen] = useState(false);
+    const [previewImageIndex, setPreviewImageIndex] = useState(0);
     const containerRef = useRef<HTMLDivElement>(null);
     const { addImageToTask, removeImageFromTask } = useTaskStore();
     const imageUrls = useImageUrls(images);
@@ -95,6 +98,11 @@ export function TaskImageManager({ taskId, images = [] }: TaskImageManagerProps)
 
     const handleRemoveImage = async (imageId: string) => {
         await removeImageFromTask(taskId, imageId);
+    };
+
+    const handleImageClick = (imageIndex: number) => {
+        setPreviewImageIndex(imageIndex);
+        setPreviewOpen(true);
     };
 
     const handleKeyDown = (event: React.KeyboardEvent) => {
@@ -222,7 +230,7 @@ export function TaskImageManager({ taskId, images = [] }: TaskImageManagerProps)
 
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                         <AnimatePresence>
-                            {images.map((image) => {
+                            {images.map((image, index) => {
                                 const imageUrl = imageUrls[image.id];
 
                                 return (
@@ -236,12 +244,18 @@ export function TaskImageManager({ taskId, images = [] }: TaskImageManagerProps)
                                     >
                                         <div className="aspect-square rounded-lg overflow-hidden bg-gray-100 border shadow-sm">
                                             {imageUrl ? (
-                                                <img
-                                                    src={imageUrl}
-                                                    alt={image.name}
-                                                    className="w-full h-full object-cover transition-transform group-hover:scale-105"
-                                                    loading="lazy"
-                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleImageClick(index)}
+                                                    className="w-full h-full focus:outline-none focus:ring-2 focus:ring-primary/50"
+                                                >
+                                                    <img
+                                                        src={imageUrl}
+                                                        alt={image.name}
+                                                        className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                                                        loading="lazy"
+                                                    />
+                                                </button>
                                             ) : (
                                                 <div className="w-full h-full flex items-center justify-center text-gray-400">
                                                     <div className="text-center">
@@ -257,7 +271,10 @@ export function TaskImageManager({ taskId, images = [] }: TaskImageManagerProps)
                                             variant="destructive"
                                             size="icon"
                                             className="absolute -top-2 -right-2 h-6 w-6 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-200 shadow-lg scale-90 hover:scale-100"
-                                            onClick={() => handleRemoveImage(image.id)}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleRemoveImage(image.id);
+                                            }}
                                         >
                                             <X className="h-3 w-3" />
                                         </Button>
@@ -275,6 +292,17 @@ export function TaskImageManager({ taskId, images = [] }: TaskImageManagerProps)
                         </AnimatePresence>
                     </div>
                 </motion.div>
+            )}
+
+            {/* Image Preview Dialog */}
+            {images.length > 0 && (
+                <ImagePreviewDialog
+                    images={images}
+                    imageUrls={imageUrls}
+                    initialImageIndex={previewImageIndex}
+                    open={previewOpen}
+                    onOpenChange={setPreviewOpen}
+                />
             )}
         </div>
     );

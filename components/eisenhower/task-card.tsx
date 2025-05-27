@@ -29,6 +29,7 @@ import { Calendar, ImageIcon, Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { ImagePreviewDialog } from "./image-preview-dialog";
 import { TaskImageManager } from "./task-image-manager";
 
 interface TaskCardProps {
@@ -99,6 +100,8 @@ export function TaskCard({
     const [isEditing, setIsEditing] = useState(false);
     const [editedTitle, setEditedTitle] = useState(title);
     const [editedDescription, setEditedDescription] = useState(description || "");
+    const [previewOpen, setPreviewOpen] = useState(false);
+    const [previewImageIndex, setPreviewImageIndex] = useState(0);
 
     const imageUrls = useImageUrls(images);
 
@@ -189,6 +192,11 @@ export function TaskCard({
     };
 
     const isOverdue = dueDate && new Date(dueDate) < new Date() && !completed;
+
+    const handleImageClick = (imageIndex: number) => {
+        setPreviewImageIndex(imageIndex);
+        setPreviewOpen(true);
+    };
 
     return (
         <motion.div
@@ -396,7 +404,7 @@ export function TaskCard({
                                         <span>{images.length} {images.length === 1 ? 'image' : 'images'}</span>
                                     </div>
                                     <div className="grid grid-cols-2 gap-2">
-                                        {images.slice(0, 4).map((image) => {
+                                        {images.slice(0, 4).map((image, index) => {
                                             const imageUrl = imageUrls[image.id];
 
                                             // No renderizar si no hay URL válida
@@ -412,7 +420,12 @@ export function TaskCard({
                                             }
 
                                             return (
-                                                <div key={image.id} className="aspect-square rounded overflow-hidden border shadow-sm">
+                                                <button
+                                                    key={image.id}
+                                                    type="button"
+                                                    onClick={() => handleImageClick(index)}
+                                                    className="aspect-square rounded overflow-hidden border shadow-sm hover:shadow-md transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                                                >
                                                     <img
                                                         src={imageUrl}
                                                         alt={image.name}
@@ -422,19 +435,23 @@ export function TaskCard({
                                                         )}
                                                         loading="lazy"
                                                     />
-                                                </div>
+                                                </button>
                                             );
                                         })}
                                         {images.length > 4 && (
-                                            <div className={cn(
-                                                "aspect-square rounded bg-gray-100 flex items-center justify-center text-sm border",
-                                                { "opacity-50": completed }
-                                            )}>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleImageClick(4)}
+                                                className={cn(
+                                                    "aspect-square rounded bg-gray-100 flex items-center justify-center text-sm border hover:bg-gray-200 transition-colors",
+                                                    { "opacity-50": completed }
+                                                )}
+                                            >
                                                 <div className="text-center text-gray-500">
                                                     <ImageIcon className="h-4 w-4 mx-auto mb-1" />
                                                     <span className="text-xs">+{images.length - 4}</span>
                                                 </div>
-                                            </div>
+                                            </button>
                                         )}
                                     </div>
                                 </div>
@@ -509,6 +526,17 @@ export function TaskCard({
                     )}
                 </AnimatePresence>
             </Card>
+
+            {/* Image Preview Dialog */}
+            {images && images.length > 0 && (
+                <ImagePreviewDialog
+                    images={images}
+                    imageUrls={imageUrls}
+                    initialImageIndex={previewImageIndex}
+                    open={previewOpen}
+                    onOpenChange={setPreviewOpen}
+                />
+            )}
         </motion.div>
     );
 }
