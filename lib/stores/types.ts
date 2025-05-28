@@ -76,7 +76,7 @@ export interface TaskActions {
 	clearSelectedTasks: () => void;
 
 	// Image management
-	addImageToTask: (taskId: string, file: File) => Promise<void>;
+	addImageToTask: (taskId: string, file: File) => Promise<string>;
 	removeImageFromTask: (taskId: string, imageId: string) => Promise<void>;
 	getTaskImages: (taskId: string) => Promise<TaskImage[]>;
 	refreshTaskImages: () => Promise<void>;

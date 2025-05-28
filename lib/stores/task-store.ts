@@ -294,7 +294,7 @@ export const useTaskStore = create<TaskState & TaskActions>()(
 			},
 
 			// Image management actions
-			addImageToTask: async (taskId: string, file: File) => {
+			addImageToTask: async (taskId: string, file: File): Promise<string> => {
 				try {
 					// Inicializar ImageStorage si no está listo
 					if (!imageStorage.db) {
@@ -338,6 +338,9 @@ export const useTaskStore = create<TaskState & TaskActions>()(
 						),
 						error: null,
 					}));
+
+					// Return the image ID
+					return imageRecord.id;
 				} catch (error) {
 					console.error("Error adding image to task:", error);
 					const errorMessage =
@@ -345,6 +348,7 @@ export const useTaskStore = create<TaskState & TaskActions>()(
 							? error.message
 							: "Error adding image to task";
 					set({ error: errorMessage });
+					throw error; // Re-throw to allow caller to handle
 				}
 			},
 

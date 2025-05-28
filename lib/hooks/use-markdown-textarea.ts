@@ -78,11 +78,8 @@ export function useMarkdownTextarea({
 					const placeholder = `![Uploading ${file.name}...]()`;
 					insertAtCursor(placeholder);
 
-					// Upload image to storage
-					const imageRecord = await imageStorage.saveImage(taskId, file);
-
-					// Add image to task store using the File directly
-					await addImageToTask(taskId, file);
+					// Add image to task store (this already handles saving to IndexedDB)
+					const imageId = await addImageToTask(taskId, file);
 
 					// Create image URL and validate it
 					const imageUrl = imageStorage.createImageUrl(file);
@@ -96,7 +93,7 @@ export function useMarkdownTextarea({
 					const updatedValue = currentValue.replace(placeholder, markdownImage);
 					onChange(updatedValue);
 
-					onImageUpload?.(imageRecord.id);
+					onImageUpload?.(imageId);
 				}
 			} catch (error) {
 				console.error("Error uploading pasted image:", error);
@@ -140,8 +137,8 @@ export function useMarkdownTextarea({
 					const placeholder = `![Uploading ${file.name}...]()`;
 					insertAtCursor(placeholder);
 
-					const imageRecord = await imageStorage.saveImage(taskId, file);
-					await addImageToTask(taskId, file);
+					// Add image to task store (this already handles saving to IndexedDB)
+					const imageId = await addImageToTask(taskId, file);
 
 					const imageUrl = imageStorage.createImageUrl(file);
 					if (!imageUrl || imageUrl.trim() === "") {
@@ -154,7 +151,7 @@ export function useMarkdownTextarea({
 					const updatedValue = currentValue.replace(placeholder, markdownImage);
 					onChange(updatedValue);
 
-					onImageUpload?.(imageRecord.id);
+					onImageUpload?.(imageId);
 				}
 			} catch (error) {
 				console.error("Error uploading dropped image:", error);
