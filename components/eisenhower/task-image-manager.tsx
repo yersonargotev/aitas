@@ -196,7 +196,7 @@ export function TaskImageManager({ taskId, images = [] }: TaskImageManagerProps)
                                 <Button variant="outline" size="sm" asChild>
                                     <span className="cursor-pointer">
                                         <Upload className="h-4 w-4 mr-2" />
-                                        Browse Files
+                                        <span className="sr-only">Browse Files</span>
                                     </span>
                                 </Button>
                             </label>
