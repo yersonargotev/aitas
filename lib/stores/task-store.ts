@@ -71,15 +71,37 @@ export const useTaskStore = create<TaskState & TaskActions>()(
 			...initialState,
 
 			// Task CRUD operations
-			addTask: (taskData) => {
+			addTask: async (taskData) => {
 				try {
 					const now = new Date();
+					// Use the provided ID if available, otherwise generate a new one
+					const taskId = taskData.id || uuidv4();
+
+					// Load images for the task if they exist
+					let images: TaskImage[] = [];
+					try {
+						if (imageStorage.db) {
+							const imageRecords = await imageStorage.getImagesByTaskId(taskId);
+							images = imageRecords.map((record) => ({
+								id: record.id,
+								file: record.file,
+								name: record.name,
+								size: record.size,
+								type: record.type,
+								createdAt: record.createdAt,
+							}));
+						}
+					} catch (imageError) {
+						console.warn("Failed to load images for new task:", imageError);
+					}
+
 					const newTask: Task = {
 						...taskData,
-						id: uuidv4(),
+						id: taskId,
 						createdAt: now,
 						updatedAt: now,
 						completed: false,
+						images,
 					};
 
 					set((state) => ({

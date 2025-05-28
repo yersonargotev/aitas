@@ -120,13 +120,16 @@ export function Matrix() {
         }
     };
 
-    const handleTaskCreate = (task: Omit<Task, "id">) => {
+    const handleTaskCreate = async (task: Omit<Task, "id">) => {
         // Add project ID to the task if a project is selected
         const taskWithProject = selectedProjectId
             ? { ...task, projectId: selectedProjectId }
             : task;
 
-        addTask(taskWithProject);
+        await addTask(taskWithProject);
+
+        // Refresh task images to ensure they are loaded properly
+        await refreshTaskImages();
     };
 
     const handleTaskEdit = (taskId: string, updates?: { title?: string; description?: string }) => {

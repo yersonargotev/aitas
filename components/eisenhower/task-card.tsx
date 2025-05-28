@@ -314,6 +314,7 @@ export function TaskCard({
                             onImageUpload={(imageId) => {
                                 console.log('Image uploaded:', imageId);
                             }}
+                            showImagePreview={false}
                         />
 
                         {/* TaskImageManager para manejar imágenes en modo edición */}

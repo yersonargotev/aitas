@@ -28,6 +28,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { MarkdownTextarea } from "@/components/ui/markdown-textarea"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { imageStorage } from "@/lib/stores/image-storage"
 import { ActionButton } from "./action-button"
 
 // Define the task schema with zod
@@ -49,13 +50,26 @@ interface TaskFormProps {
         title: string
         description?: string
         priority: "urgent" | "important" | "delegate" | "eliminate" | "unclassified"
-    }) => void
+    }) => void | Promise<void>
     trigger?: React.ReactNode
 }
 
 export function TaskForm({ onSubmit, trigger }: TaskFormProps) {
     const [open, setOpen] = useState(false)
     const [tempTaskId] = useState(() => `temp-${uuidv4()}`)
+
+    // Clean up temp images when dialog closes without saving
+    const handleOpenChange = async (newOpen: boolean) => {
+        if (!newOpen && open) {
+            // Dialog is closing, clean up temp images
+            try {
+                await imageStorage.deleteImagesByTaskId(tempTaskId)
+            } catch (error) {
+                console.error('Error cleaning up temp images:', error)
+            }
+        }
+        setOpen(newOpen)
+    }
 
     // Initialize the form with react-hook-form
     const form = useForm<TaskFormValues>({
@@ -68,23 +82,24 @@ export function TaskForm({ onSubmit, trigger }: TaskFormProps) {
     })
 
     // Handle form submission
-    const handleSubmit = (values: TaskFormValues) => {
-        // Generate a unique ID for the task using uuid
-        const taskId = uuidv4()
+    const handleSubmit = async (values: TaskFormValues) => {
+        try {
+            // Call the onSubmit prop with the new task (using tempTaskId as the real ID)
+            await onSubmit({
+                id: tempTaskId,
+                ...values,
+            })
 
-        // Call the onSubmit prop with the new task
-        onSubmit({
-            id: taskId,
-            ...values,
-        })
-
-        // Reset the form and close the dialog
-        form.reset()
-        setOpen(false)
+            // Reset the form and close the dialog
+            form.reset()
+            setOpen(false)
+        } catch (error) {
+            console.error('Error creating task:', error)
+        }
     }
 
     return (
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
                 {trigger || <ActionButton>+ New Task</ActionButton>}
             </DialogTrigger>

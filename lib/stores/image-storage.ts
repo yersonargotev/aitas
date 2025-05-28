@@ -113,6 +113,45 @@ class ImageStorageService {
 		await Promise.all(deletePromises);
 	}
 
+	async transferImages(fromTaskId: string, toTaskId: string): Promise<void> {
+		if (!this.db) throw new Error("Database not initialized");
+
+		const images = await this.getImagesByTaskId(fromTaskId);
+
+		if (images.length === 0) return;
+
+		return new Promise((resolve, reject) => {
+			if (!this.db) {
+				reject(new Error("Database not initialized"));
+				return;
+			}
+
+			const transaction = this.db.transaction([this.storeName], "readwrite");
+			const store = transaction.objectStore(this.storeName);
+
+			let completed = 0;
+			const total = images.length;
+
+			const checkComplete = () => {
+				completed++;
+				if (completed === total) {
+					resolve();
+				}
+			};
+
+			// Update each image's taskId
+			for (const image of images) {
+				const updatedImage = { ...image, taskId: toTaskId };
+				const request = store.put(updatedImage);
+
+				request.onsuccess = () => checkComplete();
+				request.onerror = () => reject(request.error);
+			}
+
+			transaction.onerror = () => reject(transaction.error);
+		});
+	}
+
 	async getAllImages(): Promise<ImageRecord[]> {
 		if (!this.db) throw new Error("Database not initialized");
 

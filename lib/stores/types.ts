@@ -56,7 +56,9 @@ export interface TaskState {
 
 export interface TaskActions {
 	// Task CRUD operations
-	addTask: (task: Omit<Task, "id" | "createdAt" | "updatedAt">) => void;
+	addTask: (
+		task: Omit<Task, "id" | "createdAt" | "updatedAt"> & { id?: string },
+	) => Promise<void>;
 	updateTask: (
 		taskId: string,
 		updates: Partial<Omit<Task, "id" | "createdAt" | "updatedAt">>,
