@@ -20,13 +20,15 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { MarkdownTextarea } from "@/components/ui/markdown-textarea";
 import { useImageUrls } from "@/lib/hooks/use-image-urls";
+import { imageStorage } from "@/lib/stores/image-storage";
+import { useTaskStore } from "@/lib/stores/task-store";
 import type { TaskImage, TaskPriority } from "@/lib/stores/types";
 import { cn } from "@/lib/utils";
 import { useDraggable, useDroppable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import { AnimatePresence, motion } from "framer-motion";
 import { Calendar, ImageIcon, Pencil, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { ImagePreviewDialog } from "./image-preview-dialog";
@@ -102,8 +104,10 @@ export function TaskCard({
     const [editedDescription, setEditedDescription] = useState(description || "");
     const [previewOpen, setPreviewOpen] = useState(false);
     const [previewImageIndex, setPreviewImageIndex] = useState(0);
+    const [previousImageUrls, setPreviousImageUrls] = useState<string[]>([]);
 
     const imageUrls = useImageUrls(images);
+    const { removeImageFromTask, getTaskImages } = useTaskStore();
 
     const { attributes, listeners, setNodeRef: setDraggableRef, transform, isDragging } =
         useDraggable({
@@ -197,6 +201,59 @@ export function TaskCard({
         setPreviewImageIndex(imageIndex);
         setPreviewOpen(true);
     };
+
+    // Function to extract image URLs from markdown text
+    const extractImageUrls = useCallback((text: string): string[] => {
+        const imageRegex = /!\[([^\]]*)\]\(([^)]+)\)/g;
+        const urls: string[] = [];
+        let match: RegExpExecArray | null;
+
+        match = imageRegex.exec(text);
+        while (match !== null) {
+            urls.push(match[2]);
+            match = imageRegex.exec(text);
+        }
+        return urls;
+    }, []);
+
+    // Function to handle image removal when markdown text changes
+    const handleDescriptionChange = useCallback(async (newValue: string) => {
+        const currentUrls = extractImageUrls(newValue);
+        const removedUrls = previousImageUrls.filter(url => !currentUrls.includes(url));
+
+        // Remove images that were deleted from the markdown
+        if (removedUrls.length > 0) {
+            try {
+                const taskImages = await getTaskImages(id);
+                for (const removedUrl of removedUrls) {
+                    // Find the image that matches this URL
+                    const imageToRemove = taskImages.find(img => {
+                        const imageUrl = imageStorage.createImageUrl(img.file);
+                        return imageUrl === removedUrl;
+                    });
+
+                    if (imageToRemove) {
+                        await removeImageFromTask(id, imageToRemove.id);
+                        // Revoke the object URL to free memory
+                        imageStorage.revokeImageUrl(removedUrl);
+                    }
+                }
+            } catch (error) {
+                console.error('Error removing deleted images:', error);
+            }
+        }
+
+        setPreviousImageUrls(currentUrls);
+        setEditedDescription(newValue);
+    }, [previousImageUrls, id, getTaskImages, removeImageFromTask, extractImageUrls]);
+
+    // Update previous URLs when description changes
+    useEffect(() => {
+        if (isEditing) {
+            const currentUrls = extractImageUrls(editedDescription);
+            setPreviousImageUrls(currentUrls);
+        }
+    }, [isEditing, editedDescription, extractImageUrls]);
 
     return (
         <motion.div
@@ -307,12 +364,31 @@ export function TaskCard({
                         <MarkdownTextarea
                             taskId={id}
                             value={editedDescription}
-                            onChange={setEditedDescription}
+                            onChange={handleDescriptionChange}
                             onKeyDown={handleKeyDown}
                             placeholder="Add a description... (Supports Markdown - paste images directly!)"
                             className="min-h-[80px] resize-none w-full mt-2"
                             onImageUpload={(imageId) => {
                                 console.log('Image uploaded:', imageId);
+                            }}
+                            onImageRemove={async (imageId, imageUrl) => {
+                                try {
+                                    // Remove from task store
+                                    await removeImageFromTask(id, imageId);
+
+                                    // Remove from markdown text
+                                    const updatedDescription = editedDescription.replace(
+                                        new RegExp(`!\\[([^\\]]*)\\]\\(${imageUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\)`, 'g'),
+                                        ''
+                                    ).replace(/\n\s*\n\s*\n/g, '\n\n'); // Clean up extra line breaks
+
+                                    handleDescriptionChange(updatedDescription);
+
+                                    // Revoke the object URL to free memory
+                                    imageStorage.revokeImageUrl(imageUrl);
+                                } catch (error) {
+                                    console.error('Error removing image:', error);
+                                }
                             }}
                             showImagePreview={false}
                         />
