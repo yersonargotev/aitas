@@ -1,7 +1,7 @@
 "use client"
 
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { v4 as uuidv4 } from "uuid"
 import * as z from "zod"
@@ -29,6 +29,7 @@ import { Input } from "@/components/ui/input"
 import { MarkdownTextarea } from "@/components/ui/markdown-textarea"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { imageStorage } from "@/lib/stores/image-storage"
+import { useTaskStore } from "@/lib/stores/task-store"
 import { ActionButton } from "./action-button"
 
 // Define the task schema with zod
@@ -56,7 +57,10 @@ interface TaskFormProps {
 
 export function TaskForm({ onSubmit, trigger }: TaskFormProps) {
     const [open, setOpen] = useState(false)
-    const [tempTaskId] = useState(() => `temp-${uuidv4()}`)
+    const [tempTaskId, setTempTaskId] = useState(() => `temp-${uuidv4()}`)
+    const [previousImageUrls, setPreviousImageUrls] = useState<string[]>([])
+
+    const { removeImageFromTask, getTaskImages } = useTaskStore()
 
     // Clean up temp images when dialog closes without saving
     const handleOpenChange = async (newOpen: boolean) => {
@@ -81,6 +85,60 @@ export function TaskForm({ onSubmit, trigger }: TaskFormProps) {
         },
     })
 
+    // Function to extract image URLs from markdown text
+    const extractImageUrls = useCallback((text: string): string[] => {
+        const imageRegex = /!\[([^\]]*)\]\(([^)]+)\)/g
+        const urls: string[] = []
+        let match: RegExpExecArray | null
+
+        match = imageRegex.exec(text)
+        while (match !== null) {
+            urls.push(match[2])
+            match = imageRegex.exec(text)
+        }
+        return urls
+    }, [])
+
+    // Function to handle image removal when markdown text changes
+    const handleDescriptionChange = useCallback(async (newValue: string) => {
+        const currentUrls = extractImageUrls(newValue)
+        const removedUrls = previousImageUrls.filter(url => !currentUrls.includes(url))
+
+        // Remove images that were deleted from the markdown
+        if (removedUrls.length > 0) {
+            try {
+                const taskImages = await getTaskImages(tempTaskId)
+                for (const removedUrl of removedUrls) {
+                    // Find the image that matches this URL
+                    const imageToRemove = taskImages.find(img => {
+                        const imageUrl = imageStorage.createImageUrl(img.file)
+                        return imageUrl === removedUrl
+                    })
+
+                    if (imageToRemove) {
+                        await removeImageFromTask(tempTaskId, imageToRemove.id)
+                        // Revoke the object URL to free memory
+                        imageStorage.revokeImageUrl(removedUrl)
+                    }
+                }
+            } catch (error) {
+                console.error('Error removing deleted images:', error)
+            }
+        }
+
+        setPreviousImageUrls(currentUrls)
+    }, [previousImageUrls, tempTaskId, getTaskImages, removeImageFromTask, extractImageUrls])
+
+    // Update previous URLs when description changes
+    useEffect(() => {
+        const subscription = form.watch((value) => {
+            const description = value.description || ''
+            const currentUrls = extractImageUrls(description)
+            setPreviousImageUrls(currentUrls)
+        })
+        return () => subscription.unsubscribe()
+    }, [form, extractImageUrls])
+
     // Handle form submission
     const handleSubmit = async (values: TaskFormValues) => {
         try {
@@ -92,6 +150,12 @@ export function TaskForm({ onSubmit, trigger }: TaskFormProps) {
 
             // Reset the form and close the dialog
             form.reset()
+
+            // Generate a new temp task ID for the next task
+            const newTempTaskId = `temp-${uuidv4()}`
+            setTempTaskId(newTempTaskId)
+            setPreviousImageUrls([])
+
             setOpen(false)
         } catch (error) {
             console.error('Error creating task:', error)
@@ -136,11 +200,35 @@ export function TaskForm({ onSubmit, trigger }: TaskFormProps) {
                                         <MarkdownTextarea
                                             taskId={tempTaskId}
                                             value={field.value || ""}
-                                            onChange={field.onChange}
+                                            onChange={(newValue) => {
+                                                field.onChange(newValue)
+                                                handleDescriptionChange(newValue)
+                                            }}
                                             placeholder="Description of the task (optional) - supports Markdown and image pasting!"
                                             className="resize-none"
                                             onImageUpload={(imageId) => {
                                                 console.log('Image uploaded to new task:', imageId);
+                                            }}
+                                            onImageRemove={async (imageId, imageUrl) => {
+                                                try {
+                                                    // Remove from task store
+                                                    await removeImageFromTask(tempTaskId, imageId)
+
+                                                    // Remove from markdown text
+                                                    const currentDescription = field.value || ""
+                                                    const updatedDescription = currentDescription.replace(
+                                                        new RegExp(`!\\[([^\\]]*)\\]\\(${imageUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\)`, 'g'),
+                                                        ''
+                                                    ).replace(/\n\s*\n\s*\n/g, '\n\n') // Clean up extra line breaks
+
+                                                    field.onChange(updatedDescription)
+                                                    handleDescriptionChange(updatedDescription)
+
+                                                    // Revoke the object URL to free memory
+                                                    imageStorage.revokeImageUrl(imageUrl)
+                                                } catch (error) {
+                                                    console.error('Error removing image:', error)
+                                                }
                                             }}
                                         />
                                     </FormControl>

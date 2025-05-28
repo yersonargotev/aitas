@@ -7,7 +7,7 @@ import { useMarkdownTextarea } from "@/lib/hooks/use-markdown-textarea";
 import { useTaskStore } from "@/lib/stores/task-store";
 import type { TaskImage } from "@/lib/stores/types";
 import { cn } from "@/lib/utils";
-import { Eye, ImageIcon, Loader2 } from "lucide-react";
+import { Eye, ImageIcon, Loader2, X } from "lucide-react";
 import { forwardRef, useCallback, useEffect, useState } from "react";
 import { ImagePreviewDialog } from "../eisenhower/image-preview-dialog";
 
@@ -16,12 +16,13 @@ interface MarkdownTextareaProps extends Omit<React.TextareaHTMLAttributes<HTMLTe
     value: string;
     onChange: (value: string) => void;
     onImageUpload?: (imageId: string) => void;
+    onImageRemove?: (imageId: string, imageUrl: string) => void;
     showImagePreview?: boolean;
     compactPreview?: boolean;
 }
 
 export const MarkdownTextarea = forwardRef<HTMLTextAreaElement, MarkdownTextareaProps>(
-    ({ taskId, value, onChange, onImageUpload, showImagePreview = true, compactPreview = false, className, placeholder, ...props }, ref) => {
+    ({ taskId, value, onChange, onImageUpload, onImageRemove, showImagePreview = true, compactPreview = false, className, placeholder, ...props }, ref) => {
         const [previewOpen, setPreviewOpen] = useState(false);
         const [previewImageIndex, setPreviewImageIndex] = useState(0);
         const [taskImages, setTaskImages] = useState<TaskImage[]>([]);
@@ -98,6 +99,12 @@ export const MarkdownTextarea = forwardRef<HTMLTextAreaElement, MarkdownTextarea
                 setPreviewOpen(true);
             }
         }, [showImagePreview, taskImages.length]);
+
+        // Handle image removal
+        const handleImageRemove = useCallback((imageId: string, imageUrl: string, event: React.MouseEvent) => {
+            event.stopPropagation();
+            onImageRemove?.(imageId, imageUrl);
+        }, [onImageRemove]);
 
         const enhancedPlaceholder = isStorageReady
             ? placeholder || "Type your description... (Paste images directly!)"
@@ -203,31 +210,48 @@ export const MarkdownTextarea = forwardRef<HTMLTextAreaElement, MarkdownTextarea
                             {taskImages.slice(0, compactPreview ? 6 : 12).map((image, index) => {
                                 const imageUrl = imageUrls[image.id];
                                 return (
-                                    <button
+                                    <div
                                         key={image.id}
-                                        type="button"
-                                        onClick={() => handleImageClick(index)}
-                                        className={cn(
-                                            "aspect-square rounded-md overflow-hidden border border-border hover:border-primary/50 transition-colors group",
-                                            compactPreview && "rounded-sm"
-                                        )}
-                                        title={`Click to preview ${image.name}`}
+                                        className="relative group"
                                     >
-                                        {imageUrl ? (
-                                            <img
-                                                src={imageUrl}
-                                                alt={image.name}
-                                                className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                                            />
-                                        ) : (
-                                            <div className="w-full h-full bg-muted flex items-center justify-center">
-                                                <ImageIcon className={cn(
-                                                    "text-muted-foreground",
-                                                    compactPreview ? "h-3 w-3" : "h-4 w-4"
-                                                )} />
-                                            </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleImageClick(index)}
+                                            className={cn(
+                                                "aspect-square rounded-md overflow-hidden border border-border hover:border-primary/50 transition-colors w-full",
+                                                compactPreview && "rounded-sm"
+                                            )}
+                                            title={`Click to preview ${image.name}`}
+                                        >
+                                            {imageUrl ? (
+                                                <img
+                                                    src={imageUrl}
+                                                    alt={image.name}
+                                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                                                />
+                                            ) : (
+                                                <div className="w-full h-full bg-muted flex items-center justify-center">
+                                                    <ImageIcon className={cn(
+                                                        "text-muted-foreground",
+                                                        compactPreview ? "h-3 w-3" : "h-4 w-4"
+                                                    )} />
+                                                </div>
+                                            )}
+                                        </button>
+
+                                        {/* Remove button */}
+                                        {onImageRemove && (
+                                            <Button
+                                                variant="destructive"
+                                                size="icon"
+                                                className="absolute -top-2 -right-2 h-6 w-6 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-200 shadow-lg scale-90 hover:scale-100"
+                                                onClick={(e) => handleImageRemove(image.id, imageUrl || '', e)}
+                                                title={`Remove ${image.name}`}
+                                            >
+                                                <X className="h-3 w-3" />
+                                            </Button>
                                         )}
-                                    </button>
+                                    </div>
                                 );
                             })}
                             {taskImages.length > (compactPreview ? 6 : 12) && (
