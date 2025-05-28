@@ -1,15 +1,12 @@
 "use client";
 
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { useClipboardPaste } from '@/lib/hooks/use-clipboard-paste';
 import { useImageUrls } from '@/lib/hooks/use-image-urls';
 import { useTaskStore } from '@/lib/stores/task-store';
 import type { TaskImage } from '@/lib/stores/types';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Clipboard, Info, Upload, X } from 'lucide-react';
-import { ImageIcon } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { ImageIcon, X } from 'lucide-react';
+import { useState } from 'react';
 import { ImagePreviewDialog } from './image-preview-dialog';
 
 interface TaskImageManagerProps {
@@ -19,82 +16,10 @@ interface TaskImageManagerProps {
 }
 
 export function TaskImageManager({ taskId, images = [] }: TaskImageManagerProps) {
-    const [isDragOver, setIsDragOver] = useState(false);
-    const [showClipboardHint, setShowClipboardHint] = useState(false);
-    const [isUploading, setIsUploading] = useState(false);
     const [previewOpen, setPreviewOpen] = useState(false);
     const [previewImageIndex, setPreviewImageIndex] = useState(0);
-    const containerRef = useRef<HTMLDivElement>(null);
-    const { addImageToTask, removeImageFromTask } = useTaskStore();
+    const { removeImageFromTask } = useTaskStore();
     const imageUrls = useImageUrls(images);
-
-    // Hook para manejar el paste desde clipboard
-    const { pasteFromClipboard, isPasting } = useClipboardPaste({
-        onImagePaste: async (file: File) => {
-            setIsUploading(true);
-            try {
-                await addImageToTask(taskId, file);
-                setShowClipboardHint(true);
-                setTimeout(() => setShowClipboardHint(false), 3000);
-            } finally {
-                setIsUploading(false);
-            }
-        },
-        enabled: true,
-        targetElement: containerRef.current,
-        onPasteStart: () => setIsUploading(true),
-        onPasteComplete: (success) => {
-            setIsUploading(false);
-            if (success) {
-                setShowClipboardHint(true);
-                setTimeout(() => setShowClipboardHint(false), 3000);
-            }
-        }
-    });
-
-    const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-        const files = event.target.files;
-        if (!files) return;
-
-        setIsUploading(true);
-        try {
-            for (const file of Array.from(files)) {
-                if (file.type.startsWith('image/')) {
-                    await addImageToTask(taskId, file);
-                }
-            }
-        } finally {
-            setIsUploading(false);
-            // Limpiar el input
-            event.target.value = '';
-        }
-    };
-
-    const handleDrop = async (event: React.DragEvent) => {
-        event.preventDefault();
-        setIsDragOver(false);
-
-        const files = event.dataTransfer.files;
-        setIsUploading(true);
-        try {
-            for (const file of Array.from(files)) {
-                if (file.type.startsWith('image/')) {
-                    await addImageToTask(taskId, file);
-                }
-            }
-        } finally {
-            setIsUploading(false);
-        }
-    };
-
-    const handleDragOver = (event: React.DragEvent) => {
-        event.preventDefault();
-        setIsDragOver(true);
-    };
-
-    const handleDragLeave = () => {
-        setIsDragOver(false);
-    };
 
     const handleRemoveImage = async (imageId: string) => {
         await removeImageFromTask(taskId, imageId);
@@ -105,14 +30,6 @@ export function TaskImageManager({ taskId, images = [] }: TaskImageManagerProps)
         setPreviewOpen(true);
     };
 
-    const handleKeyDown = (event: React.KeyboardEvent) => {
-        // Mostrar hint cuando se presiona Ctrl/Cmd + V
-        if ((event.ctrlKey || event.metaKey) && event.key === 'v') {
-            setShowClipboardHint(true);
-            setTimeout(() => setShowClipboardHint(false), 2000);
-        }
-    };
-
     const formatFileSize = (bytes: number) => {
         if (bytes < 1024) return `${bytes} B`;
         if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
@@ -120,101 +37,7 @@ export function TaskImageManager({ taskId, images = [] }: TaskImageManagerProps)
     };
 
     return (
-        <div
-            ref={containerRef}
-            className="space-y-3"
-            onKeyDown={handleKeyDown}
-            onFocus={() => setShowClipboardHint(false)}
-        >
-            {/* Clipboard hint */}
-            <AnimatePresence>
-                {showClipboardHint && (
-                    <motion.div
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        transition={{ duration: 0.2 }}
-                    >
-                        <Alert className="border-blue-200 bg-blue-50">
-                            <Info className="h-4 w-4" />
-                            <AlertDescription>
-                                Image pasted from clipboard! 📋✨
-                            </AlertDescription>
-                        </Alert>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-
-            {/* Upload Area */}
-            <div
-                className={`border-2 border-dashed rounded-lg p-4 text-center transition-all duration-200 ${isDragOver
-                    ? 'border-primary bg-primary/5 scale-105'
-                    : 'border-gray-300 hover:border-gray-400'
-                    } ${isUploading || isPasting ? 'opacity-50 pointer-events-none' : ''}`}
-                onDrop={handleDrop}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-            >
-                <input
-                    type="file"
-                    id={`images-${taskId}`}
-                    accept="image/*"
-                    multiple
-                    onChange={handleFileChange}
-                    className="hidden"
-                    disabled={isUploading || isPasting}
-                />
-
-                <div className="space-y-3">
-                    {isUploading || isPasting ? (
-                        <div className="animate-spin h-8 w-8 mx-auto border-2 border-primary border-t-transparent rounded-full" />
-                    ) : (
-                        <Upload className="mx-auto h-8 w-8 text-gray-400" />
-                    )}
-
-                    <div className="space-y-2">
-                        <p className="text-sm text-gray-600 font-medium">
-                            {isUploading || isPasting ? 'Uploading images...' : 'Add images to your task'}
-                        </p>
-
-                        {!isUploading && !isPasting && (
-                            <div className="space-y-1 text-xs text-gray-500">
-                                <p>• Drag & drop images here</p>
-                                <p>• Click to browse files</p>
-                                <p>• Press <kbd className="px-1 py-0.5 bg-gray-200 rounded text-xs font-mono">Ctrl+V</kbd> to paste from clipboard</p>
-                            </div>
-                        )}
-
-                        <p className="text-xs text-gray-400">
-                            PNG, JPG, GIF up to 10MB each
-                        </p>
-                    </div>
-
-                    {!isUploading && !isPasting && (
-                        <div className="flex gap-2 justify-center">
-                            <label htmlFor={`images-${taskId}`}>
-                                <Button variant="outline" size="sm" asChild>
-                                    <span className="cursor-pointer">
-                                        <Upload className="h-4 w-4 mr-2" />
-                                        <span className="sr-only">Browse Files</span>
-                                    </span>
-                                </Button>
-                            </label>
-
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={pasteFromClipboard}
-                                className="text-blue-600 border-blue-200 hover:bg-blue-50"
-                                disabled={isPasting}
-                            >
-                                <Clipboard className="h-4 w-4 mr-2" />
-                                {isPasting ? 'Pasting...' : 'Paste'}
-                            </Button>
-                        </div>
-                    )}
-                </div>
-            </div>
+        <div className="space-y-3">
 
             {/* Image Preview Grid */}
             {images.length > 0 && (
