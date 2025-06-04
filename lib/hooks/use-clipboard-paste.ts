@@ -69,30 +69,7 @@ export function useClipboardPaste({
 		[onImagePaste, enabled, isPasting, onPasteStart, onPasteComplete],
 	);
 
-	// Detectar combinación de teclas Ctrl+V/Cmd+V
-	const handleKeyDown = useCallback(
-		(event: KeyboardEvent) => {
-			if (!enabled) return;
-
-			if ((event.ctrlKey || event.metaKey) && event.key === "v") {
-				// Si el foco está en un input o textarea, no interceptar
-				const activeElement = document.activeElement;
-				if (
-					activeElement &&
-					(activeElement.tagName === "INPUT" ||
-						activeElement.tagName === "TEXTAREA" ||
-						activeElement.getAttribute("contenteditable") === "true")
-				) {
-					return;
-				}
-
-				// Intentar pegar desde el clipboard API
-				pasteFromClipboard();
-			}
-		},
-		[enabled],
-	);
-
+	// Moved pasteFromClipboard before handleKeyDown
 	const pasteFromClipboard = useCallback(async () => {
 		if (isPasting) return;
 
@@ -132,6 +109,30 @@ export function useClipboardPaste({
 			setIsPasting(false);
 		}
 	}, [onImagePaste, isPasting, onPasteStart, onPasteComplete]);
+
+	// Detectar combinación de teclas Ctrl+V/Cmd+V
+	const handleKeyDown = useCallback(
+		(event: KeyboardEvent) => {
+			if (!enabled) return;
+
+			if ((event.ctrlKey || event.metaKey) && event.key === "v") {
+				// Si el foco está en un input o textarea, no interceptar
+				const activeElement = document.activeElement;
+				if (
+					activeElement &&
+					(activeElement.tagName === "INPUT" ||
+						activeElement.tagName === "TEXTAREA" ||
+						activeElement.getAttribute("contenteditable") === "true")
+				) {
+					return;
+				}
+
+				// Intentar pegar desde el clipboard API
+				pasteFromClipboard();
+			}
+		},
+		[enabled, pasteFromClipboard],
+	);
 
 	useEffect(() => {
 		const element = targetElement || document;

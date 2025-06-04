@@ -67,7 +67,7 @@ export function TaskForm({ onSubmit, trigger }: TaskFormProps) {
         if (!newOpen && open) {
             // Dialog is closing, clean up temp images
             try {
-                await imageStorage.deleteImagesByTaskId(tempTaskId)
+                await imageStorage.deleteImagesByParentId(tempTaskId)
             } catch (error) {
                 console.error('Error cleaning up temp images:', error)
             }

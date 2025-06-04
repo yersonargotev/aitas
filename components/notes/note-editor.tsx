@@ -7,7 +7,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Textarea } from '@/components/ui/textarea';
 import { useNotesStore } from '@/hooks/use-notes';
 import type { Note } from '@/types/note';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react'; // Removed useRef
 import { useDebouncedCallback } from 'use-debounce';
 import { useClipboardPaste } from '@/lib/hooks/use-clipboard-paste';
 import { imageStorage } from '@/lib/stores/image-storage';
@@ -51,11 +51,13 @@ export function NoteEditor({ noteId, onSave, onCancel }: NoteEditorProps) {
     // Effect for cleaning up blob URLs
     useEffect(() => {
         // This effect runs when the component unmounts or when noteId changes.
+        // It cleans up URLs associated with the note that is being navigated away from.
         return () => {
             activeBlobUrls.forEach(url => imageStorage.revokeImageUrl(url));
             setActiveBlobUrls(new Set()); // Clear the set after revoking
         };
-    }, [noteId]); // Only re-run if noteId changes, or on unmount.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [noteId]); // Purposefully not including activeBlobUrls: see explanation above.
 
     const handleImagePaste = async (file: File) => {
         setPasteError(null);
@@ -78,7 +80,7 @@ export function NoteEditor({ noteId, onSave, onCancel }: NoteEditorProps) {
         }
     };
 
-    const { isPasting, pasteFromClipboard } = useClipboardPaste({
+    const { isPasting } = useClipboardPaste({ // Removed pasteFromClipboard
         onImagePaste: handleImagePaste,
         enabled: !!noteId && isImageStorageInitialized,
         // onPasteStart: () => { /* Optionally set some pasting state */ },
@@ -154,7 +156,6 @@ export function NoteEditor({ noteId, onSave, onCancel }: NoteEditorProps) {
         }
     }, 300);
 
-    // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
     useEffect(() => {
         if (noteId && currentProjectId) {
             const noteToEdit = getNoteById(noteId);
@@ -165,16 +166,18 @@ export function NoteEditor({ noteId, onSave, onCancel }: NoteEditorProps) {
                     debouncedRenderPreview(noteToEdit.content);
                 }
             } else {
+                // Note not found or new note, reset fields
                 setTitle('');
                 setContent('');
                 setPreviewHtml('');
             }
         } else {
+            // No noteId or projectId, reset fields (e.g. when creating a new note or no project selected)
             setTitle('');
             setContent('');
             setPreviewHtml('');
         }
-    }, [noteId, currentProjectId, getNoteById]);
+    }, [noteId, currentProjectId, getNoteById, currentTab, debouncedRenderPreview]);
 
     useEffect(() => {
         if (currentTab === 'preview') {

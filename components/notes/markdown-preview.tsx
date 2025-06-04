@@ -4,7 +4,7 @@ import type { RehypeShikiOptions } from '@shikijs/rehype';
 import { imageStorage } from '@/lib/stores/image-storage';
 // Use the core import for passing a custom highlighter
 import rehypeShikiFromHighlighter from '@shikijs/rehype/core';
-import type { Highlighter } from '@shikijs/core';
+import type { Highlighter } from 'shiki'; // Changed from @shikijs/core
 import {
     transformerNotationDiff,
     transformerNotationFocus,
