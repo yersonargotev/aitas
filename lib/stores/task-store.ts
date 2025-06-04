@@ -81,7 +81,7 @@ export const useTaskStore = create<TaskState & TaskActions>()(
 					let images: TaskImage[] = [];
 					try {
 						if (imageStorage.db) {
-							const imageRecords = await imageStorage.getImagesByTaskId(taskId);
+							const imageRecords = await imageStorage.getImagesByParentId(taskId);
 							images = imageRecords.map((record) => ({
 								id: record.id,
 								file: record.file,
@@ -147,7 +147,7 @@ export const useTaskStore = create<TaskState & TaskActions>()(
 			deleteTask: async (taskId) => {
 				try {
 					// Eliminar imágenes asociadas de IndexedDB
-					await imageStorage.deleteImagesByTaskId(taskId);
+					await imageStorage.deleteImagesByParentId(taskId);
 
 					set((state) => {
 						const filteredTasks = state.tasks.filter(
@@ -382,7 +382,7 @@ export const useTaskStore = create<TaskState & TaskActions>()(
 						await imageStorage.init();
 					}
 
-					const imageRecords = await imageStorage.getImagesByTaskId(taskId);
+					const imageRecords = await imageStorage.getImagesByParentId(taskId);
 					return imageRecords.map((record) => ({
 						id: record.id,
 						file: record.file,
@@ -408,7 +408,7 @@ export const useTaskStore = create<TaskState & TaskActions>()(
 					const updatedTasks = await Promise.all(
 						state.tasks.map(async (task) => {
 							try {
-								const images = await imageStorage.getImagesByTaskId(task.id);
+								const images = await imageStorage.getImagesByParentId(task.id);
 								return {
 									...task,
 									images: images.map((record) => ({
@@ -485,7 +485,7 @@ export const useTaskStore = create<TaskState & TaskActions>()(
 						for (const task of state.tasks) {
 							if (task.id) {
 								try {
-									const images = await imageStorage.getImagesByTaskId(task.id);
+									const images = await imageStorage.getImagesByParentId(task.id);
 									if (images.length > 0) {
 										task.images = images.map((record) => ({
 											id: record.id,

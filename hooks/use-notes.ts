@@ -4,6 +4,7 @@ import {
 	getNotesFromStorage,
 	saveNoteToStorage,
 } from "@/lib/notes-local-storage";
+import { imageStorage } from "@/lib/stores/image-storage";
 import type { Note } from "@/types/note";
 import { create } from "zustand";
 
@@ -106,7 +107,18 @@ export const useNotesStore = create<NotesState>((set, get) => ({
 		}
 		set({ isLoading: true, error: null });
 		try {
-			deleteNoteFromStorage(noteId, projectId);
+			deleteNoteFromStorage(noteId, projectId); // This is synchronous
+
+			// Attempt to delete associated images
+			try {
+				await imageStorage.deleteImagesByParentId(noteId);
+			} catch (imageError) {
+				// Log the error but don't let it block note deletion workflow
+				console.error(`Failed to delete images for note ${noteId}:`, imageError);
+				// Optionally, set a specific error state related to image deletion if needed
+				// For now, we just log it and proceed with note deletion from state.
+			}
+
 			set((state) => ({
 				notes: state.notes.filter((n) => n.id !== noteId),
 				isLoading: false,

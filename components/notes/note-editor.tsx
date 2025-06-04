@@ -7,8 +7,11 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Textarea } from '@/components/ui/textarea';
 import { useNotesStore } from '@/hooks/use-notes';
 import type { Note } from '@/types/note';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useDebouncedCallback } from 'use-debounce';
+import { useClipboardPaste } from '@/lib/hooks/use-clipboard-paste';
+import { imageStorage } from '@/lib/stores/image-storage';
+// import { nanoid } from 'nanoid'; // Not strictly needed if noteId is always present for pasting
 
 interface NoteEditorProps {
     noteId?: string | null;
@@ -23,20 +26,118 @@ export function NoteEditor({ noteId, onSave, onCancel }: NoteEditorProps) {
     const [previewHtml, setPreviewHtml] = useState('');
     const [isPreviewLoading, setIsPreviewLoading] = useState(false);
     const [previewError, setPreviewError] = useState<string | null>(null);
+    const [isImageStorageInitialized, setIsImageStorageInitialized] = useState(false);
+    const [imageStorageError, setImageStorageError] = useState<string | null>(null);
+    const [pasteError, setPasteError] = useState<string | null>(null);
+    const [activeBlobUrls, setActiveBlobUrls] = useState<Set<string>>(new Set());
 
     const { addNote, updateNote, getNoteById, currentProjectId, isLoading, error } = useNotesStore();
 
-    const debouncedRenderPreview = useDebouncedCallback(async (newContent: string) => {
-        if (!newContent.trim()) {
+    useEffect(() => {
+        const initStorage = async () => {
+            try {
+                await imageStorage.init();
+                setIsImageStorageInitialized(true);
+                setImageStorageError(null);
+            } catch (err) {
+                console.error("Failed to initialize image storage:", err);
+                setImageStorageError(err instanceof Error ? err.message : "Unknown error initializing storage");
+                setIsImageStorageInitialized(false);
+            }
+        };
+        initStorage();
+    }, []);
+
+    // Effect for cleaning up blob URLs
+    useEffect(() => {
+        // This effect runs when the component unmounts or when noteId changes.
+        return () => {
+            activeBlobUrls.forEach(url => imageStorage.revokeImageUrl(url));
+            setActiveBlobUrls(new Set()); // Clear the set after revoking
+        };
+    }, [noteId]); // Only re-run if noteId changes, or on unmount.
+
+    const handleImagePaste = async (file: File) => {
+        setPasteError(null);
+        if (!noteId) {
+            setPasteError("Please save the note before pasting images.");
+            return;
+        }
+        if (!isImageStorageInitialized) {
+            setPasteError("Image storage is not ready. Please try again in a moment.");
+            return;
+        }
+
+        try {
+            const savedImage = await imageStorage.saveImage(noteId, file);
+            const markdownImage = `![pasted-image](indexeddb://${savedImage.id})`;
+            setContent((prevContent) => prevContent + "\n" + markdownImage + "\n");
+        } catch (err) {
+            console.error("Failed to save pasted image:", err);
+            setPasteError(err instanceof Error ? err.message : "Failed to save image.");
+        }
+    };
+
+    const { isPasting, pasteFromClipboard } = useClipboardPaste({
+        onImagePaste: handleImagePaste,
+        enabled: !!noteId && isImageStorageInitialized,
+        // onPasteStart: () => { /* Optionally set some pasting state */ },
+        // onPasteComplete: () => { /* Optionally clear pasting state */ },
+    });
+
+    const debouncedRenderPreview = useDebouncedCallback(async (markdownContent: string) => {
+        if (!markdownContent.trim()) {
             setPreviewHtml('');
             setPreviewError(null);
             setIsPreviewLoading(false);
+            // Revoke any existing blob URLs if content is cleared
+            activeBlobUrls.forEach(url => imageStorage.revokeImageUrl(url));
+            setActiveBlobUrls(new Set());
             return;
         }
         setIsPreviewLoading(true);
         setPreviewError(null);
+
+        let contentWithBlobUrls = markdownContent;
+        const imageRegex = /!\[.*?\]\(indexeddb:\/\/([a-zA-Z0-9_-]+)\)/g;
+        const matches = Array.from(markdownContent.matchAll(imageRegex));
+        const newlyCreatedBlobUrls = new Set<string>();
+
+        if (isImageStorageInitialized) {
+            const processingPromises = matches.map(async (match) => {
+                const imageId = match[1];
+                try {
+                    const record = await imageStorage.getImageById(imageId);
+                    if (record && record.file) {
+                        const blobUrl = imageStorage.createImageUrl(record.file);
+                        newlyCreatedBlobUrls.add(blobUrl);
+                        // Replace in contentWithBlobUrls. Need to be careful with regex replacement.
+                        // Using a simple string replace for the full match should be safe here.
+                        contentWithBlobUrls = contentWithBlobUrls.replace(match[0], `![${match[0].substring(2, match[0].indexOf(']'))}](${blobUrl})`);
+                    } else {
+                        contentWithBlobUrls = contentWithBlobUrls.replace(match[0], `![Image not found: ${imageId}](missing-image-placeholder)`);
+                    }
+                } catch (error) {
+                    console.error(`Error processing image ${imageId} for preview:`, error);
+                    contentWithBlobUrls = contentWithBlobUrls.replace(match[0], `![Error loading image: ${imageId}](error-loading-image)`);
+                }
+            });
+            await Promise.all(processingPromises);
+        } else {
+            // If image storage is not ready, replace all indexeddb links with a message
+            contentWithBlobUrls = markdownContent.replace(imageRegex, `![Image storage not ready](image-storage-not-ready)`);
+        }
+
+        // Manage blob URLs: revoke old ones not in the new set, then update active set
+        activeBlobUrls.forEach(url => {
+            if (!newlyCreatedBlobUrls.has(url)) {
+                imageStorage.revokeImageUrl(url);
+            }
+        });
+        setActiveBlobUrls(newlyCreatedBlobUrls);
+
         try {
-            const result = await renderMarkdownPreviewAction(newContent);
+            const result = await renderMarkdownPreviewAction(contentWithBlobUrls);
             if ('html' in result) {
                 setPreviewHtml(result.html);
             } else {
@@ -48,8 +149,9 @@ export function NoteEditor({ noteId, onSave, onCancel }: NoteEditorProps) {
             setPreviewHtml('');
             setPreviewError('An unexpected error occurred while rendering preview.');
             console.error("Unexpected preview error:", e);
+        } finally {
+            setIsPreviewLoading(false);
         }
-        setIsPreviewLoading(false);
     }, 300);
 
     // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
@@ -156,6 +258,9 @@ export function NoteEditor({ noteId, onSave, onCancel }: NoteEditorProps) {
                 )}
             </ScrollArea>
 
+            {imageStorageError && <p className="text-sm text-red-500 mb-2">Image Storage Error: {imageStorageError}</p>}
+            {pasteError && <p className="text-sm text-red-500 mb-2">Paste Error: {pasteError}</p>}
+            {isPasting && <p className="text-sm text-blue-500 mb-2">Pasting image...</p>}
             {error && <p className="text-sm text-red-500 mb-2">Error saving: {error}</p>}
 
             <div className="flex justify-end gap-2 mt-auto">
