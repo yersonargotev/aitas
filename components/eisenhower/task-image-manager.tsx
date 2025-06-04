@@ -6,6 +6,7 @@ import { useTaskStore } from '@/lib/stores/task-store';
 import type { TaskImage } from '@/lib/stores/types';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ImageIcon, X } from 'lucide-react';
+import Image from 'next/image';
 import { useState } from 'react';
 import { ImagePreviewDialog } from './image-preview-dialog';
 
@@ -70,13 +71,15 @@ export function TaskImageManager({ taskId, images = [] }: TaskImageManagerProps)
                                                 <button
                                                     type="button"
                                                     onClick={() => handleImageClick(index)}
-                                                    className="w-full h-full focus:outline-none focus:ring-2 focus:ring-primary/50"
+                                                    className="relative w-full h-full focus:outline-none focus:ring-2 focus:ring-primary/50" // Added relative
                                                 >
-                                                    <img
+                                                    <Image
                                                         src={imageUrl}
-                                                        alt={image.name}
-                                                        className="w-full h-full object-cover transition-transform group-hover:scale-105"
-                                                        loading="lazy"
+                                                        alt={image.name || "Uploaded image"}
+                                                        layout="fill"
+                                                        objectFit="cover"
+                                                        className="transition-transform group-hover:scale-105"
+                                                        unoptimized={true}
                                                     />
                                                 </button>
                                             ) : (

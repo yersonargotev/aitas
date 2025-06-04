@@ -59,7 +59,7 @@ export function NoteListItem({
             // biome-ignore lint/a11y/useSemanticElements: <explanation>
             role="button"
             tabIndex={isLoading ? -1 : 0}
-            aria-selected={isSelected}
+            aria-current={isSelected ? "page" : undefined}
             aria-disabled={isLoading}
             className={`flex items-center justify-between w-full p-3 rounded-lg text-left hover:bg-muted/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed
         ${isSelected ? "bg-muted" : "bg-transparent"}

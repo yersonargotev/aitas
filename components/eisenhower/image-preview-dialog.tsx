@@ -11,6 +11,7 @@ import type { TaskImage } from "@/lib/stores/types";
 import { cn } from "@/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, Download, X, ZoomIn, ZoomOut } from "lucide-react";
+import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
 
 interface ImagePreviewDialogProps {
@@ -227,16 +228,28 @@ export function ImagePreviewDialog({
                                 exit={{ opacity: 0, scale: 0.9 }}
                                 transition={{ duration: 0.2 }}
                             >
-                                <img
-                                    src={currentImageUrl}
-                                    alt={currentImage.name}
-                                    className="max-w-full max-h-full object-contain select-none"
-                                    style={{
-                                        transform: `scale(${zoom}) translate(${position.x / zoom}px, ${position.y / zoom}px)`,
-                                        transformOrigin: "center",
-                                    }}
-                                    draggable={false}
-                                />
+                                {/* Ensure motion.div and its parent are styled for layout="fill" if that's used.
+                                    Given existing styles, direct width/height might be complex due to zoom/pan.
+                                    Let's assume for now the existing classNames on motion.div handle sizing
+                                    and we use layout="fill" with objectFit="contain".
+                                    The parent div of motion.div already has position relative.
+                                    The motion.div itself will act as the immediate parent for Next/Image.
+                                */}
+                                <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+                                    <Image
+                                        src={currentImageUrl}
+                                        alt={currentImage.name || "Image preview"}
+                                        layout="fill"
+                                        objectFit="contain"
+                                        className="select-none" // Removed max-w-full max-h-full as layout="fill" handles this
+                                        style={{
+                                            transform: `scale(${zoom}) translate(${position.x / zoom}px, ${position.y / zoom}px)`,
+                                            transformOrigin: "center",
+                                        }}
+                                        draggable={false}
+                                        unoptimized={true} // If imageUrls can be from external non-configured domains or are blob URLs
+                                    />
+                                </div>
                             </motion.div>
                         </AnimatePresence>
                     </div>
@@ -276,17 +289,19 @@ export function ImagePreviewDialog({
                                         type="button"
                                         onClick={() => setCurrentIndex(index)}
                                         className={cn(
-                                            "flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all",
+                                            "relative flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all", // Added relative
                                             index === currentIndex
                                                 ? "border-primary ring-2 ring-primary/20"
                                                 : "border-border hover:border-primary/50"
                                         )}
                                     >
                                         {thumbnailUrl ? (
-                                            <img
+                                            <Image
                                                 src={thumbnailUrl}
-                                                alt={image.name}
-                                                className="w-full h-full object-cover"
+                                                alt={image.name || "Thumbnail"}
+                                                layout="fill"
+                                                objectFit="cover"
+                                                unoptimized={true} // If imageUrls can be from external non-configured domains or are blob URLs
                                             />
                                         ) : (
                                             <div className="w-full h-full bg-muted flex items-center justify-center">

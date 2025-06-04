@@ -8,6 +8,7 @@ import { useTaskStore } from "@/lib/stores/task-store";
 import type { TaskImage } from "@/lib/stores/types";
 import { cn } from "@/lib/utils";
 import { Eye, ImageIcon, Loader2, X } from "lucide-react";
+import Image from "next/image";
 import { forwardRef, useCallback, useEffect, useState } from "react";
 import { ImagePreviewDialog } from "../eisenhower/image-preview-dialog";
 
@@ -218,16 +219,19 @@ export const MarkdownTextarea = forwardRef<HTMLTextAreaElement, MarkdownTextarea
                                             type="button"
                                             onClick={() => handleImageClick(index)}
                                             className={cn(
-                                                "aspect-square rounded-md overflow-hidden border border-border hover:border-primary/50 transition-colors w-full",
+                                                "relative aspect-square rounded-md overflow-hidden border border-border hover:border-primary/50 transition-colors w-full", // Added relative
                                                 compactPreview && "rounded-sm"
                                             )}
                                             title={`Click to preview ${image.name}`}
                                         >
                                             {imageUrl ? (
-                                                <img
+                                                <Image
                                                     src={imageUrl}
-                                                    alt={image.name}
-                                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                                                    alt={image.name || "Preview"}
+                                                    layout="fill"
+                                                    objectFit="cover"
+                                                    className="group-hover:scale-105 transition-transform"
+                                                    unoptimized={true}
                                                 />
                                             ) : (
                                                 <div className="w-full h-full bg-muted flex items-center justify-center">

@@ -7,7 +7,7 @@ export type TaskPriority =
 
 export interface TaskImage {
 	id: string;
-	file: File;
+	file?: File; // Changed to optional
 	name: string;
 	size: number;
 	type: string;

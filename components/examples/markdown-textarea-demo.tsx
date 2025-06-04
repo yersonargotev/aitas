@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -75,14 +76,37 @@ export function MarkdownTextareaDemo() {
                             <ReactMarkdown
                                 remarkPlugins={[remarkGfm]}
                                 components={{
-                                    img: ({ src, alt }) => (
-                                        <img
-                                            src={src}
-                                            alt={alt || 'Image'}
-                                            className="max-w-full h-auto rounded border my-2"
-                                            loading="lazy"
-                                        />
-                                    ),
+                                    img: ({ src, alt }) => {
+                                        // Using Next/Image in Markdown can be tricky due to required width/height
+                                        // and potential layout shifts if dimensions are unknown.
+                                        // This is a placeholder implementation.
+                                        // Consider a custom component or further refinement for production.
+                                        if (!src) { // Handle cases where src might be undefined or empty
+                                            return (
+                                                <span className="inline-flex items-center gap-2 px-2 py-1 bg-muted rounded text-xs text-muted-foreground">
+                                                    <span>{alt || 'Image loading error'}</span>
+                                                </span>
+                                            );
+                                        }
+                                        const finalSrc = typeof src === 'string' ? src : URL.createObjectURL(src as Blob);
+                                        return (
+                                            <div style={{ position: 'relative', maxWidth: '100%', margin: '0.5rem 0' }}>
+                                                <Image
+                                                    src={finalSrc}
+                                                    alt={alt || 'Image'}
+                                                    width={500} // Placeholder width
+                                                    height={300} // Placeholder height
+                                                    layout="responsive"
+                                                    objectFit="contain"
+                                                    className="rounded border"
+                                                    unoptimized={true} // Assuming these might be blob URLs or external
+                                                    onError={() => {
+                                                        console.error("Failed to load image in markdown demo:", finalSrc);
+                                                    }}
+                                                />
+                                            </div>
+                                        );
+                                    },
                                 }}
                             >
                                 {description}
