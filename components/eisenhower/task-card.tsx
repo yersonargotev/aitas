@@ -106,8 +106,9 @@ export function TaskCard({
     const [previewOpen, setPreviewOpen] = useState(false);
     const [previewImageIndex, setPreviewImageIndex] = useState(0);
     const [previousImageUrls, setPreviousImageUrls] = useState<string[]>([]);
+    const [fullImageRecords, setFullImageRecords] = useState<TaskImage[]>([]);
 
-    const imageUrls = useImageUrls(images);
+    const imageUrls = useImageUrls(fullImageRecords);
     const { removeImageFromTask, getTaskImages } = useTaskStore();
 
     const { attributes, listeners, setNodeRef: setDraggableRef, transform, isDragging } =
@@ -266,6 +267,33 @@ export function TaskCard({
         }
     }, [isEditing, editedDescription, extractImageUrls]);
 
+    // Load full image records with file objects when images change
+    useEffect(() => {
+        const loadFullImages = async () => {
+            if (images.length > 0) {
+                try {
+                    const imageRecords = await getTaskImages(id);
+                    const fullImages = imageRecords.map(record => ({
+                        id: record.id,
+                        file: record.file,
+                        name: record.name,
+                        size: record.size,
+                        type: record.type,
+                        createdAt: record.createdAt,
+                    }));
+                    setFullImageRecords(fullImages);
+                } catch (error) {
+                    console.error('Error loading full image records:', error);
+                    setFullImageRecords([]);
+                }
+            } else {
+                setFullImageRecords([]);
+            }
+        };
+
+        loadFullImages();
+    }, [images, id, getTaskImages]);
+
     return (
         <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -412,7 +440,7 @@ export function TaskCard({
                             </h5>
                             <TaskImageManager
                                 taskId={id}
-                                images={images}
+                                images={fullImageRecords}
                             />
                         </div>
 
@@ -524,16 +552,16 @@ export function TaskCard({
                         )}
 
                         {/* Mostrar imágenes en modo lectura */}
-                        {images && images.length > 0 && (
+                        {fullImageRecords.length > 0 && (
                             <CardContent className="p-3 pt-0">
                                 <div className="space-y-2">
                                     {!description && <div className="border-t" />}
                                     <div className="flex items-center gap-2 text-xs text-gray-600">
                                         <ImageIcon className="h-3 w-3" />
-                                        <span>{images.length} {images.length === 1 ? 'image' : 'images'}</span>
+                                        <span>{fullImageRecords.length} {fullImageRecords.length === 1 ? 'image' : 'images'}</span>
                                     </div>
                                     <div className="grid grid-cols-2 gap-2">
-                                        {images.slice(0, 4).map((image, index) => {
+                                        {fullImageRecords.slice(0, 4).map((image, index) => {
                                             const imageUrl = imageUrls[image.id];
 
                                             // No renderizar si no hay URL válida
@@ -569,7 +597,7 @@ export function TaskCard({
                                                 </button>
                                             );
                                         })}
-                                        {images.length > 4 && (
+                                        {fullImageRecords.length > 4 && (
                                             <button
                                                 type="button"
                                                 onClick={() => handleImageClick(4)}
@@ -580,7 +608,7 @@ export function TaskCard({
                                             >
                                                 <div className="text-center text-gray-500">
                                                     <ImageIcon className="h-4 w-4 mx-auto mb-1" />
-                                                    <span className="text-xs">+{images.length - 4}</span>
+                                                    <span className="text-xs">+{fullImageRecords.length - 4}</span>
                                                 </div>
                                             </button>
                                         )}
@@ -659,9 +687,9 @@ export function TaskCard({
             </Card>
 
             {/* Image Preview Dialog */}
-            {images && images.length > 0 && (
+            {fullImageRecords.length > 0 && (
                 <ImagePreviewDialog
-                    images={images}
+                    images={fullImageRecords}
                     imageUrls={imageUrls}
                     initialImageIndex={previewImageIndex}
                     open={previewOpen}

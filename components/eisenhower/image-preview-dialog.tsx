@@ -142,10 +142,6 @@ export function ImagePreviewDialog({
         return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
     };
 
-    if (!currentImage || !currentImageUrl) {
-        return null;
-    }
-
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-6xl w-full h-[90vh] p-0 overflow-hidden">
@@ -208,9 +204,9 @@ export function ImagePreviewDialog({
                 </DialogHeader>
 
                 {/* Image container */}
-                <div className="relative flex-1 flex items-center justify-center bg-black/5 pt-20 pb-4">
+                <div className="relative flex-1 flex items-center justify-center bg-black/5 pt-20 pb-4 min-h-0">
                     <div
-                        className="relative max-w-full max-h-full overflow-hidden cursor-move"
+                        className="relative w-full h-full max-w-[90%] max-h-full flex items-center justify-center"
                         onMouseDown={handleMouseDown}
                         onMouseMove={handleMouseMove}
                         onMouseUp={handleMouseUp}
@@ -222,34 +218,29 @@ export function ImagePreviewDialog({
                         <AnimatePresence mode="wait">
                             <motion.div
                                 key={currentImage.id}
-                                className="max-w-full max-h-full"
+                                className="relative w-full h-full"
                                 initial={{ opacity: 0, scale: 0.9 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 exit={{ opacity: 0, scale: 0.9 }}
                                 transition={{ duration: 0.2 }}
+                                style={{
+                                    minHeight: '400px',
+                                    minWidth: '400px',
+                                }}
                             >
-                                {/* Ensure motion.div and its parent are styled for layout="fill" if that's used.
-                                    Given existing styles, direct width/height might be complex due to zoom/pan.
-                                    Let's assume for now the existing classNames on motion.div handle sizing
-                                    and we use layout="fill" with objectFit="contain".
-                                    The parent div of motion.div already has position relative.
-                                    The motion.div itself will act as the immediate parent for Next/Image.
-                                */}
-                                <div style={{ width: '100%', height: '100%', position: 'relative' }}>
-                                    <Image
-                                        src={currentImageUrl}
-                                        alt={currentImage.name || "Image preview"}
-                                        fill
-                                        style={{
-                                            objectFit: 'contain',
-                                            transform: `scale(${zoom}) translate(${position.x / zoom}px, ${position.y / zoom}px)`,
-                                            transformOrigin: "center",
-                                        }}
-                                        className="select-none"
-                                        draggable={false}
-                                        unoptimized={true}
-                                    />
-                                </div>
+                                <Image
+                                    src={currentImageUrl}
+                                    alt={currentImage.name || "Image preview"}
+                                    fill
+                                    style={{
+                                        objectFit: 'contain',
+                                        transform: `scale(${zoom}) translate(${position.x / zoom}px, ${position.y / zoom}px)`,
+                                        transformOrigin: "center",
+                                    }}
+                                    className="select-none"
+                                    draggable={false}
+                                    unoptimized={true}
+                                />
                             </motion.div>
                         </AnimatePresence>
                     </div>
