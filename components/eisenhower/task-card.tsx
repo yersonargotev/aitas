@@ -229,8 +229,18 @@ export function TaskCard({
                 for (const removedUrl of removedUrls) {
                     // Find the image that matches this URL
                     const imageToRemove = taskImages.find(img => {
-                        const imageUrl = imageStorage.createImageUrl(img.file);
-                        return imageUrl === removedUrl;
+                        if (img.file) { // Explicitly check if img.file is defined
+                            const imageUrl = imageStorage.createImageUrl(img.file);
+                            const match = imageUrl === removedUrl;
+                            if (!match) {
+                                // If this imageUrl was created just for comparison and it didn't match,
+                                // it's a new blob URL that needs to be revoked.
+                                imageStorage.revokeImageUrl(imageUrl);
+                            }
+                            // If it *does* match, 'removedUrl' (which is 'imageUrl') will be revoked later if 'imageToRemove' is true.
+                            return match;
+                        }
+                        return false; // If img.file is undefined, it cannot match
                     });
 
                     if (imageToRemove) {
