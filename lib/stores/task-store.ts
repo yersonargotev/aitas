@@ -3,7 +3,7 @@
 import { v4 as uuidv4 } from "uuid";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
-import { imageStorage } from "./image-storage";
+import { imageStorage, type ImageRecord } from "./image-storage";
 import type {
 	Task,
 	TaskActions,
@@ -401,21 +401,13 @@ export const useTaskStore = create<TaskState & TaskActions>()(
 				}
 			},
 
-			getTaskImages: async (taskId: string) => {
+			getTaskImages: async (taskId: string): Promise<ImageRecord[]> => {
 				try {
 					if (!imageStorage.db) {
 						await imageStorage.init();
 					}
-
-					const imageRecords = await imageStorage.getImagesByParentId(taskId);
-					return imageRecords.map((record) => ({
-						id: record.id,
-						// file: record.file, // Avoid storing File object
-						name: record.name,
-						size: record.size,
-						type: record.type,
-						createdAt: record.createdAt,
-					}));
+					// This should return the full ImageRecord, including the File object
+					return imageStorage.getImagesByParentId(taskId);
 				} catch (error) {
 					console.error("Error getting task images:", error);
 					return [];
