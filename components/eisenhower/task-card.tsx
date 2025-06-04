@@ -489,7 +489,7 @@ export function TaskCard({
                                                                 // Next.js Image onError doesn't allow direct DOM manipulation like this.
                                                                 // You'd typically set a state to render a placeholder.
                                                                 // For simplicity in this linting fix, we'll log and it might show a broken image.
-                                                                console.error("Failed to load image in markdown:", finalSrc);
+                                                                console.error("Failed to load image in markdown:", finalSrc, e);
                                                                 // To implement a placeholder, you'd need a state variable.
                                                                 // e.g., setHasError(true), then render a placeholder if hasError is true.
                                                                 // (e.target as HTMLImageElement).src = '/placeholder-image.png'; // This is against Next.js Image best practices
