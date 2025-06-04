@@ -1,3 +1,5 @@
+import type { ImageRecord } from './image-storage';
+
 export type TaskPriority =
 	| "urgent"
 	| "important"
@@ -78,7 +80,7 @@ export interface TaskActions {
 	// Image management
 	addImageToTask: (taskId: string, file: File) => Promise<string>;
 	removeImageFromTask: (taskId: string, imageId: string) => Promise<void>;
-	getTaskImages: (taskId: string) => Promise<TaskImage[]>;
+	getTaskImages: (taskId: string) => Promise<ImageRecord[]>;
 	refreshTaskImages: () => Promise<void>;
 
 	// Filter management

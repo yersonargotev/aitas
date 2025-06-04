@@ -39,7 +39,6 @@ export function TaskImageManager({ taskId, images = [] }: TaskImageManagerProps)
 
     return (
         <div className="space-y-3">
-
             {/* Image Preview Grid */}
             {images.length > 0 && (
                 <motion.div
@@ -71,13 +70,13 @@ export function TaskImageManager({ taskId, images = [] }: TaskImageManagerProps)
                                                 <button
                                                     type="button"
                                                     onClick={() => handleImageClick(index)}
-                                                    className="relative w-full h-full focus:outline-none focus:ring-2 focus:ring-primary/50" // Added relative
+                                                    className="relative w-full h-full focus:outline-none focus:ring-2 focus:ring-primary/50"
                                                 >
                                                     <Image
                                                         src={imageUrl}
                                                         alt={image.name || "Uploaded image"}
-                                                        layout="fill"
-                                                        objectFit="cover"
+                                                        fill
+                                                        style={{ objectFit: 'cover' }}
                                                         className="transition-transform group-hover:scale-105"
                                                         unoptimized={true}
                                                     />

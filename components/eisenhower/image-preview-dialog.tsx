@@ -239,15 +239,15 @@ export function ImagePreviewDialog({
                                     <Image
                                         src={currentImageUrl}
                                         alt={currentImage.name || "Image preview"}
-                                        layout="fill"
-                                        objectFit="contain"
-                                        className="select-none" // Removed max-w-full max-h-full as layout="fill" handles this
+                                        fill
                                         style={{
+                                            objectFit: 'contain',
                                             transform: `scale(${zoom}) translate(${position.x / zoom}px, ${position.y / zoom}px)`,
                                             transformOrigin: "center",
                                         }}
+                                        className="select-none"
                                         draggable={false}
-                                        unoptimized={true} // If imageUrls can be from external non-configured domains or are blob URLs
+                                        unoptimized={true}
                                     />
                                 </div>
                             </motion.div>
@@ -299,9 +299,9 @@ export function ImagePreviewDialog({
                                             <Image
                                                 src={thumbnailUrl}
                                                 alt={image.name || "Thumbnail"}
-                                                layout="fill"
-                                                objectFit="cover"
-                                                unoptimized={true} // If imageUrls can be from external non-configured domains or are blob URLs
+                                                fill
+                                                style={{ objectFit: 'cover' }}
+                                                unoptimized={true}
                                             />
                                         ) : (
                                             <div className="w-full h-full bg-muted flex items-center justify-center">

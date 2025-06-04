@@ -114,11 +114,11 @@ export const useTaskStore = create<TaskState & TaskActions>()(
 						const imageRecords = await imageStorage.getImagesByParentId(newPermanentId);
 						taskImages = imageRecords.map((record) => ({
 							id: record.id,
+							file: record.file, // Include file for URL creation
 							name: record.name,
 							size: record.size,
 							type: record.type,
 							createdAt: record.createdAt,
-							// Not including record.file to keep state serializable
 						}));
 					} catch (imageError) {
 						console.warn(`Failed to load images for task ${newPermanentId}:`, imageError);
@@ -506,8 +506,7 @@ export const useTaskStore = create<TaskState & TaskActions>()(
 									if (images.length > 0) {
 										task.images = images.map((record) => ({
 											id: record.id,
-											// file: record.file, // Avoid storing File object
-										// file: record.file, // Avoid storing File object
+											file: record.file, // Include file for URL creation
 											name: record.name,
 											size: record.size,
 											type: record.type,

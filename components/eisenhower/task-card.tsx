@@ -479,20 +479,17 @@ export function TaskCard({
                                                         <Image
                                                             src={finalSrc}
                                                             alt={alt || 'Image'}
-                                                            width={500} // Placeholder width
-                                                            height={300} // Placeholder height
-                                                            layout="responsive" // Or intrinsic, depending on desired behavior
-                                                            objectFit="contain" // Or cover, depending on context
+                                                            width={500}
+                                                            height={300}
+                                                            style={{
+                                                                width: '100%',
+                                                                height: 'auto',
+                                                                objectFit: 'contain'
+                                                            }}
                                                             className="rounded border"
-                                                            unoptimized={true} // Assuming these might be blob URLs or external
+                                                            unoptimized={true}
                                                             onError={(e) => {
-                                                                // Next.js Image onError doesn't allow direct DOM manipulation like this.
-                                                                // You'd typically set a state to render a placeholder.
-                                                                // For simplicity in this linting fix, we'll log and it might show a broken image.
                                                                 console.error("Failed to load image in markdown:", finalSrc, e);
-                                                                // To implement a placeholder, you'd need a state variable.
-                                                                // e.g., setHasError(true), then render a placeholder if hasError is true.
-                                                                // (e.target as HTMLImageElement).src = '/placeholder-image.png'; // This is against Next.js Image best practices
                                                             }}
                                                         />
                                                     </div>
@@ -561,8 +558,8 @@ export function TaskCard({
                                                     <Image
                                                         src={imageUrl}
                                                         alt={image.name || "Task image"}
-                                                        layout="fill"
-                                                        objectFit="cover"
+                                                        fill
+                                                        style={{ objectFit: 'cover' }}
                                                         className={cn(
                                                             "transition-opacity",
                                                             { "opacity-50": completed }

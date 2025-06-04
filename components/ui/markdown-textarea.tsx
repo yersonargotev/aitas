@@ -228,8 +228,8 @@ export const MarkdownTextarea = forwardRef<HTMLTextAreaElement, MarkdownTextarea
                                                 <Image
                                                     src={imageUrl}
                                                     alt={image.name || "Preview"}
-                                                    layout="fill"
-                                                    objectFit="cover"
+                                                    fill
+                                                    style={{ objectFit: 'cover' }}
                                                     className="group-hover:scale-105 transition-transform"
                                                     unoptimized={true}
                                                 />
