@@ -7,6 +7,7 @@ import {
 import { imageStorage } from "@/lib/stores/image-storage";
 import type { Note } from "@/types/note";
 import { create } from "zustand";
+import { nanoid } from 'nanoid';
 
 interface NotesState {
 	notes: Note[];
@@ -16,7 +17,7 @@ interface NotesState {
 	currentProjectId: string | null; // Para saber de qué proyecto cargar/guardar
 
 	loadNotes: (projectId: string) => void;
-	addNote: (title: string, content: string) => Promise<Note | null>;
+	addNote: (title: string, content: string, tempImageParentId?: string) => Promise<Note | null>;
 	updateNote: (
 		noteId: string,
 		title: string,
@@ -48,7 +49,7 @@ export const useNotesStore = create<NotesState>((set, get) => ({
 		}
 	},
 
-	addNote: async (title, content) => {
+	addNote: async (title, content, tempImageParentId?: string) => {
 		const projectId = get().currentProjectId;
 		if (!projectId) {
 			set({ error: "Project ID is not set. Cannot add note." });
@@ -56,7 +57,35 @@ export const useNotesStore = create<NotesState>((set, get) => ({
 		}
 		set({ isLoading: true, error: null });
 		try {
-			const newNote = saveNoteToStorage({ projectId, title, content });
+			const noteId = nanoid();
+			const now = new Date().toISOString();
+
+			const newNoteData: Omit<Note, 'projectId' | 'id'> = { // Properties that saveNoteToStorage might fill or override
+				title,
+				content,
+				createdAt: now,
+				updatedAt: now,
+				// any other default fields for a new note from Note type
+			};
+
+			if (tempImageParentId) {
+				try {
+					// Initialize imageStorage if it hasn't been already
+					if (!imageStorage.db) {
+						await imageStorage.init();
+					}
+					await imageStorage.transferImages(tempImageParentId, noteId);
+				} catch (error) {
+					console.error(`Failed to transfer images from temp ID ${tempImageParentId} to new note ${noteId}:`, error);
+					// Optionally, set an error state or include this info in the returned note/error
+				}
+			}
+
+			// Assuming saveNoteToStorage can take a full Note object or specific fields including the generated id.
+			// It needs to merge projectId and the generated id.
+			const newNote = saveNoteToStorage({ ...newNoteData, id: noteId, projectId: projectId });
+
+
 			set((state) => ({
 				notes: [...state.notes, newNote],
 				isLoading: false,

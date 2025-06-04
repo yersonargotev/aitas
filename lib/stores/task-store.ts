@@ -71,37 +71,62 @@ export const useTaskStore = create<TaskState & TaskActions>()(
 			...initialState,
 
 			// Task CRUD operations
-			addTask: async (taskData) => {
+			addTask: async (taskInput) => { // Renamed taskData to taskInput for clarity
 				try {
 					const now = new Date();
-					// Use the provided ID if available, otherwise generate a new one
-					const taskId = taskData.id || uuidv4();
+					const { id: tempTaskId, ...restOfTaskInput } = taskInput; // Destructure tempTaskId
 
-					// Load images for the task if they exist
-					let images: TaskImage[] = [];
-					try {
-						if (imageStorage.db) {
-							const imageRecords = await imageStorage.getImagesByParentId(taskId);
-							images = imageRecords.map((record) => ({
-								id: record.id,
-								file: record.file,
-								name: record.name,
-								size: record.size,
-								type: record.type,
-								createdAt: record.createdAt,
-							}));
-						}
-					} catch (imageError) {
-						console.warn("Failed to load images for new task:", imageError);
-					}
+					const newPermanentId = uuidv4(); // Always generate a new permanent ID
 
-					const newTask: Task = {
-						...taskData,
-						id: taskId,
+					const newTaskBase: Omit<Task, 'images'> = {
+						...restOfTaskInput,
+						id: newPermanentId, // Use the new permanent ID
 						createdAt: now,
 						updatedAt: now,
 						completed: false,
-						images,
+						// Ensure all required fields from Task are present, e.g. priority if not in taskInput
+						priority: taskInput.priority || 'unclassified',
+						// title: taskInput.title (already in restOfTaskInput)
+						// description: taskInput.description (already in restOfTaskInput)
+					};
+
+					let taskImages: TaskImage[] = [];
+
+					if (tempTaskId) {
+						try {
+							// Initialize imageStorage if it hasn't been already
+							if (!imageStorage.db) {
+								await imageStorage.init();
+							}
+							await imageStorage.transferImages(tempTaskId, newPermanentId);
+						} catch (error) {
+							console.error(`Failed to transfer images from ${tempTaskId} to ${newPermanentId}:`, error);
+							// Decide if you want to throw, or continue without images, or partial images
+						}
+					}
+
+					// Always fetch images for the newPermanentId,
+					// this will get transferred images or newly added ones if API changes.
+					try {
+						if (!imageStorage.db) { // Ensure initialized before fetching
+							await imageStorage.init();
+						}
+						const imageRecords = await imageStorage.getImagesByParentId(newPermanentId);
+						taskImages = imageRecords.map((record) => ({
+							id: record.id,
+							name: record.name,
+							size: record.size,
+							type: record.type,
+							createdAt: record.createdAt,
+							// Not including record.file to keep state serializable
+						}));
+					} catch (imageError) {
+						console.warn(`Failed to load images for task ${newPermanentId}:`, imageError);
+					}
+
+					const newTask: Task = {
+						...newTaskBase,
+						images: taskImages,
 					};
 
 					set((state) => ({
@@ -318,7 +343,7 @@ export const useTaskStore = create<TaskState & TaskActions>()(
 					// Crear TaskImage para el estado de Zustand
 					const taskImage: TaskImage = {
 						id: imageRecord.id,
-						file: imageRecord.file,
+						// file: imageRecord.file, // Avoid storing File object in Zustand state
 						name: imageRecord.name,
 						size: imageRecord.size,
 						type: imageRecord.type,
@@ -385,7 +410,7 @@ export const useTaskStore = create<TaskState & TaskActions>()(
 					const imageRecords = await imageStorage.getImagesByParentId(taskId);
 					return imageRecords.map((record) => ({
 						id: record.id,
-						file: record.file,
+						// file: record.file, // Avoid storing File object
 						name: record.name,
 						size: record.size,
 						type: record.type,
@@ -489,7 +514,8 @@ export const useTaskStore = create<TaskState & TaskActions>()(
 									if (images.length > 0) {
 										task.images = images.map((record) => ({
 											id: record.id,
-											file: record.file,
+											// file: record.file, // Avoid storing File object
+										// file: record.file, // Avoid storing File object
 											name: record.name,
 											size: record.size,
 											type: record.type,

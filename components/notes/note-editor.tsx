@@ -11,7 +11,7 @@ import { useEffect, useState } from 'react'; // Removed useRef
 import { useDebouncedCallback } from 'use-debounce';
 import { useClipboardPaste } from '@/lib/hooks/use-clipboard-paste';
 import { imageStorage } from '@/lib/stores/image-storage';
-// import { nanoid } from 'nanoid'; // Not strictly needed if noteId is always present for pasting
+import { nanoid } from 'nanoid';
 
 interface NoteEditorProps {
     noteId?: string | null;
@@ -30,8 +30,17 @@ export function NoteEditor({ noteId, onSave, onCancel }: NoteEditorProps) {
     const [imageStorageError, setImageStorageError] = useState<string | null>(null);
     const [pasteError, setPasteError] = useState<string | null>(null);
     const [activeBlobUrls, setActiveBlobUrls] = useState<Set<string>>(new Set());
+    const [tempNoteIdForImages, setTempNoteIdForImages] = useState(() => !noteId ? nanoid() : null);
 
     const { addNote, updateNote, getNoteById, currentProjectId, isLoading, error } = useNotesStore();
+
+    useEffect(() => {
+        if (!noteId) { // If it's a new note (no noteId yet)
+            setTempNoteIdForImages(nanoid());
+        } else { // If an existing note is loaded, or a new note was just saved (noteId is now set)
+            setTempNoteIdForImages(null);
+        }
+    }, [noteId]);
 
     useEffect(() => {
         const initStorage = async () => {
@@ -59,10 +68,12 @@ export function NoteEditor({ noteId, onSave, onCancel }: NoteEditorProps) {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [noteId]); // Purposefully not including activeBlobUrls: see explanation above.
 
+    const actualParentIdForImages = noteId || tempNoteIdForImages;
+
     const handleImagePaste = async (file: File) => {
         setPasteError(null);
-        if (!noteId) {
-            setPasteError("Please save the note before pasting images.");
+        if (!actualParentIdForImages) {
+            setPasteError("Cannot determine note ID for saving the image.");
             return;
         }
         if (!isImageStorageInitialized) {
@@ -71,7 +82,7 @@ export function NoteEditor({ noteId, onSave, onCancel }: NoteEditorProps) {
         }
 
         try {
-            const savedImage = await imageStorage.saveImage(noteId, file);
+            const savedImage = await imageStorage.saveImage(actualParentIdForImages, file);
             const markdownImage = `![pasted-image](indexeddb://${savedImage.id})`;
             setContent((prevContent) => prevContent + "\n" + markdownImage + "\n");
         } catch (err) {
@@ -82,7 +93,7 @@ export function NoteEditor({ noteId, onSave, onCancel }: NoteEditorProps) {
 
     const { isPasting } = useClipboardPaste({ // Removed pasteFromClipboard
         onImagePaste: handleImagePaste,
-        enabled: !!noteId && isImageStorageInitialized,
+        enabled: !!actualParentIdForImages && isImageStorageInitialized,
         // onPasteStart: () => { /* Optionally set some pasting state */ },
         // onPasteComplete: () => { /* Optionally clear pasting state */ },
     });
@@ -181,12 +192,19 @@ export function NoteEditor({ noteId, onSave, onCancel }: NoteEditorProps) {
 
     useEffect(() => {
         if (currentTab === 'preview') {
-            debouncedRenderPreview(content);
+            if (isImageStorageInitialized) {
+                debouncedRenderPreview(content);
+            } else {
+                // Image storage is not ready yet, show an initializing message
+                setPreviewHtml('');
+                setPreviewError('Image storage is initializing...');
+                setIsPreviewLoading(true);
+            }
         }
         return () => {
             debouncedRenderPreview.cancel();
         };
-    }, [content, currentTab, debouncedRenderPreview]);
+    }, [content, currentTab, debouncedRenderPreview, isImageStorageInitialized]); // Added isImageStorageInitialized
 
     const handleSave = async () => {
         if (!currentProjectId) {
@@ -194,10 +212,15 @@ export function NoteEditor({ noteId, onSave, onCancel }: NoteEditorProps) {
             return;
         }
         let savedNote: Note | null = null;
-        if (noteId) {
+        if (noteId) { // Update existing note
             savedNote = await updateNote(noteId, title, content);
-        } else {
-            savedNote = await addNote(title, content);
+        } else { // Add new note
+            if (!actualParentIdForImages) {
+                 console.error("tempNoteIdForImages is not set for new note, this should not happen.");
+                 setPasteError("Error: A temporary ID for handling images was not available. Please try again.");
+                 return;
+            }
+            savedNote = await addNote(title, content, actualParentIdForImages); // Pass tempId
         }
         if (savedNote && onSave) {
             onSave(savedNote);
