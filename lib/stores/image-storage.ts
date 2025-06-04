@@ -4,7 +4,7 @@ import { nanoid } from "nanoid";
 
 export interface ImageRecord {
 	id: string;
-	taskId: string;
+	parentId: string;
 	file: File;
 	name: string;
 	size: number;
@@ -33,8 +33,8 @@ class ImageStorageService {
 
 				if (!db.objectStoreNames.contains(this.storeName)) {
 					const store = db.createObjectStore(this.storeName, { keyPath: "id" });
-					// Index by taskId for efficient queries
-					store.createIndex("taskId", "taskId", { unique: false });
+					// Index by parentId for efficient queries
+					store.createIndex("parentId", "parentId", { unique: false });
 					// Index by createdAt for sorting
 					store.createIndex("createdAt", "createdAt", { unique: false });
 				}
@@ -42,12 +42,12 @@ class ImageStorageService {
 		});
 	}
 
-	async saveImage(taskId: string, file: File): Promise<ImageRecord> {
+	async saveImage(parentId: string, file: File): Promise<ImageRecord> {
 		if (!this.db) throw new Error("Database not initialized");
 
 		const imageRecord: ImageRecord = {
 			id: nanoid(),
-			taskId,
+			parentId,
 			file,
 			name: file.name,
 			size: file.size,
@@ -70,7 +70,7 @@ class ImageStorageService {
 		});
 	}
 
-	async getImagesByTaskId(taskId: string): Promise<ImageRecord[]> {
+	async getImagesByParentId(parentId: string): Promise<ImageRecord[]> {
 		if (!this.db) throw new Error("Database not initialized");
 
 		return new Promise((resolve, reject) => {
@@ -81,11 +81,32 @@ class ImageStorageService {
 
 			const transaction = this.db.transaction([this.storeName], "readonly");
 			const store = transaction.objectStore(this.storeName);
-			const index = store.index("taskId");
-			const request = index.getAll(taskId);
+			const index = store.index("parentId");
+			const request = index.getAll(parentId);
 
 			request.onsuccess = () => resolve(request.result);
 			request.onerror = () => reject(request.error);
+		});
+	}
+
+	async getImageById(imageId: string): Promise<ImageRecord | null> {
+		if (!this.db) {
+			console.error("Database not initialized. Call init() first.");
+			return null;
+		}
+
+		return new Promise((resolve, reject) => {
+			const transaction = this.db!.transaction([this.storeName], "readonly");
+			const store = transaction.objectStore(this.storeName);
+			const request = store.get(imageId);
+
+			request.onsuccess = () => {
+				resolve(request.result || null); // request.result is undefined if not found
+			};
+			request.onerror = () => {
+				console.error(`Error fetching image by ID ${imageId}:`, request.error);
+				reject(request.error);
+			};
 		});
 	}
 
@@ -107,16 +128,16 @@ class ImageStorageService {
 		});
 	}
 
-	async deleteImagesByTaskId(taskId: string): Promise<void> {
-		const images = await this.getImagesByTaskId(taskId);
+	async deleteImagesByParentId(parentId: string): Promise<void> {
+		const images = await this.getImagesByParentId(parentId);
 		const deletePromises = images.map((image) => this.deleteImage(image.id));
 		await Promise.all(deletePromises);
 	}
 
-	async transferImages(fromTaskId: string, toTaskId: string): Promise<void> {
+	async transferImages(fromParentId: string, toParentId: string): Promise<void> {
 		if (!this.db) throw new Error("Database not initialized");
 
-		const images = await this.getImagesByTaskId(fromTaskId);
+		const images = await this.getImagesByParentId(fromParentId);
 
 		if (images.length === 0) return;
 
@@ -139,9 +160,9 @@ class ImageStorageService {
 				}
 			};
 
-			// Update each image's taskId
+			// Update each image's parentId
 			for (const image of images) {
-				const updatedImage = { ...image, taskId: toTaskId };
+				const updatedImage = { ...image, parentId: toParentId };
 				const request = store.put(updatedImage);
 
 				request.onsuccess = () => checkComplete();
