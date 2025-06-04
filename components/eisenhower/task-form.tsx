@@ -111,6 +111,7 @@ export function TaskForm({ onSubmit, trigger }: TaskFormProps) {
                 for (const removedUrl of removedUrls) {
                     // Find the image that matches this URL
                     const imageToRemove = taskImages.find(img => {
+                        if (!img.file) return false
                         const imageUrl = imageStorage.createImageUrl(img.file)
                         return imageUrl === removedUrl
                     })
