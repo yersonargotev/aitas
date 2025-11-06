@@ -14,9 +14,10 @@ interface NotesState {
 	currentNoteId: string | null;
 	isLoading: boolean;
 	error: string | null;
-	currentProjectId: string | null; // Para saber de qué proyecto cargar/guardar
+	currentProjectId: string | null | undefined; // Para saber de qué proyecto cargar/guardar
 
-	loadNotes: (projectId: string) => void;
+	loadNotes: (projectId?: string) => void;
+	loadStandaloneNotes: () => void;
 	addNote: (title: string, content: string, tempImageParentId?: string) => Promise<Note | null>;
 	updateNote: (
 		noteId: string,
@@ -34,10 +35,9 @@ export const useNotesStore = create<NotesState>((set, get) => ({
 	currentNoteId: null,
 	isLoading: false,
 	error: null,
-	currentProjectId: null,
+	currentProjectId: undefined,
 
 	loadNotes: (projectId) => {
-		if (!projectId) return;
 		set({ isLoading: true, error: null, currentProjectId: projectId });
 		try {
 			const notesFromStorage = getNotesFromStorage(projectId);
@@ -49,23 +49,23 @@ export const useNotesStore = create<NotesState>((set, get) => ({
 		}
 	},
 
+	loadStandaloneNotes: () => {
+		get().loadNotes(undefined);
+	},
+
 	addNote: async (title, content, tempImageParentId?: string) => {
-		const projectId = get().currentProjectId;
-		if (!projectId) {
-			set({ error: "Project ID is not set. Cannot add note." });
-			return null;
-		}
+		const projectId = get().currentProjectId; // Can be undefined for standalone notes
 		set({ isLoading: true, error: null });
 		try {
 			const noteId = nanoid();
 			const now = new Date().toISOString();
 
-			const newNoteData: Omit<Note, 'projectId' | 'id'> = { // Properties that saveNoteToStorage might fill or override
+			const newNoteData: Partial<Note> = {
 				title,
 				content,
 				createdAt: now,
 				updatedAt: now,
-				// any other default fields for a new note from Note type
+				projectId, // Will be undefined for standalone notes
 			};
 
 			if (tempImageParentId) {
@@ -83,7 +83,7 @@ export const useNotesStore = create<NotesState>((set, get) => ({
 
 			// Assuming saveNoteToStorage can take a full Note object or specific fields including the generated id.
 			// It needs to merge projectId and the generated id.
-			const newNote = saveNoteToStorage({ ...newNoteData, id: noteId, projectId: projectId });
+			const newNote = saveNoteToStorage({ ...newNoteData, id: noteId });
 
 
 			set((state) => ({
@@ -101,16 +101,12 @@ export const useNotesStore = create<NotesState>((set, get) => ({
 	},
 
 	updateNote: async (noteId, title, content) => {
-		const projectId = get().currentProjectId;
-		if (!projectId) {
-			set({ error: "Project ID is not set. Cannot update note." });
-			return null;
-		}
+		const projectId = get().currentProjectId; // Can be undefined
 		set({ isLoading: true, error: null });
 		try {
 			const updatedNote = saveNoteToStorage({
 				id: noteId,
-				projectId,
+				projectId, // Can be undefined
 				title,
 				content,
 			});
@@ -129,11 +125,7 @@ export const useNotesStore = create<NotesState>((set, get) => ({
 	},
 
 	deleteNote: async (noteId) => {
-		const projectId = get().currentProjectId;
-		if (!projectId) {
-			set({ error: "Project ID is not set. Cannot delete note." });
-			return;
-		}
+		const projectId = get().currentProjectId; // Can be undefined
 		set({ isLoading: true, error: null });
 		try {
 			deleteNoteFromStorage(noteId, projectId); // This is synchronous
@@ -166,8 +158,7 @@ export const useNotesStore = create<NotesState>((set, get) => ({
 	},
 
 	getNoteById: (noteId: string) => {
-		const projectId = get().currentProjectId;
-		if (!projectId) return undefined;
+		const projectId = get().currentProjectId; // Can be undefined
 		// Primero intenta desde el store para rapidez, luego desde localStorage como fallback
 		const noteFromStore = get().notes.find((note) => note.id === noteId);
 		if (noteFromStore) return noteFromStore;
