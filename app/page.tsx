@@ -15,16 +15,23 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
+import { migrateMainDashboardNotesToStandalone } from "@/lib/notes-local-storage";
 import { useQueryState } from "nuqs";
-import { Suspense } from "react";
-
-const MAIN_PAGE_PROJECT_ID = "main_dashboard_notes";
+import { Suspense, useEffect } from "react";
 
 // Component that uses useQueryState - needs to be wrapped in Suspense
 function MainContent() {
   const [activeTab, setActiveTab] = useQueryState("tab", {
     defaultValue: "tasks",
   });
+
+  // Run migration on mount
+  useEffect(() => {
+    const migrated = migrateMainDashboardNotesToStandalone();
+    if (migrated) {
+      console.log('Notes migration completed');
+    }
+  }, []);
 
   return (
     <div className="container mx-auto flex flex-1 flex-col px-4 py-8">
@@ -44,7 +51,7 @@ function MainContent() {
             <Matrix />
           </TabsContent>
           <TabsContent value="notes" className="flex-1 flex flex-col overflow-y-auto overflow-x-hidden focus-visible:ring-0 focus-visible:ring-offset-0 min-h-[500px]">
-            <ProjectNotesView projectId={MAIN_PAGE_PROJECT_ID} />
+            <ProjectNotesView projectId={undefined} projectName={undefined} />
           </TabsContent>
         </Tabs>
       </div>

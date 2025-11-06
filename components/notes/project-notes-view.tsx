@@ -17,15 +17,16 @@ import {
 } from "@/components/ui/resizable";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { useNotesStore } from "@/hooks/use-notes";
-import { PanelLeftClose, XIcon } from "lucide-react";
+import { PanelLeftClose, XIcon, Folder, StickyNote } from "lucide-react";
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import type { ImperativePanelHandle } from 'react-resizable-panels';
 
 interface ProjectNotesViewProps {
-    projectId: string;
+    projectId?: string; // Made optional - undefined means standalone notes
+    projectName?: string; // For display purposes
 }
 
-export function ProjectNotesView({ projectId }: ProjectNotesViewProps) {
+export function ProjectNotesView({ projectId, projectName }: ProjectNotesViewProps) {
     // Selectores individuales para el store de Zustand
     const loadNotes = useNotesStore((state) => state.loadNotes);
     const selectNote = useNotesStore((state) => state.selectNote);
@@ -42,7 +43,8 @@ export function ProjectNotesView({ projectId }: ProjectNotesViewProps) {
     const editorPanelRef = useRef<ImperativePanelHandle>(null);
 
     useEffect(() => {
-        if (projectId && projectId !== currentProjectIdFromStore) {
+        // Always load notes for the given projectId (can be undefined for standalone)
+        if (projectId !== currentProjectIdFromStore) {
             loadNotes(projectId);
         }
     }, [projectId, loadNotes, currentProjectIdFromStore]);
@@ -112,6 +114,26 @@ export function ProjectNotesView({ projectId }: ProjectNotesViewProps) {
         setEditorMode(null);
     }, [selectNote]);
 
+    const contextHeader = (
+        <div className="px-4 py-2 border-b bg-muted/30 flex items-center gap-2">
+            {projectId ? (
+                <>
+                    <Folder className="h-4 w-4 text-primary" />
+                    <span className="text-sm font-medium">
+                        Project: {projectName || 'Unknown'}
+                    </span>
+                </>
+            ) : (
+                <>
+                    <StickyNote className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-medium text-muted-foreground">
+                        Standalone Notes
+                    </span>
+                </>
+            )}
+        </div>
+    );
+
     const editorPlaceholder = (
         <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-4 text-center">
             <PanelLeftClose className="h-12 w-12 mb-4 opacity-50" />
@@ -131,41 +153,45 @@ export function ProjectNotesView({ projectId }: ProjectNotesViewProps) {
 
     if (isDesktop) {
         return (
-            <ResizablePanelGroup
-                direction="horizontal"
-                className="h-full w-full rounded-lg border bg-background"
-            >
-                <ResizablePanel
-                    ref={listPanelRef}
-                    defaultSize={30}
-                    minSize={20}
-                    maxSize={40}
-                    collapsible={true}
-                    collapsedSize={4.5}
-                    onCollapse={() => editorPanelRef.current?.resize(100 - 4.5)}
-                    onExpand={() => editorPanelRef.current?.resize(70)}
-                    className="min-w-[200px]"
+            <div className="flex flex-col h-full">
+                {contextHeader}
+                <ResizablePanelGroup
+                    direction="horizontal"
+                    className="flex-1 rounded-lg border bg-background"
                 >
-                    <NoteList
-                        onSelectNote={handleSelectNote}
-                        onCreateNewNote={handleCreateNewNote}
-                    />
-                </ResizablePanel>
-                <ResizableHandle withHandle />
-                <ResizablePanel
-                    ref={editorPanelRef}
-                    defaultSize={70}
-                    minSize={30}
-                    className="min-w-[300px]"
-                >
-                    {currentEditor}
-                </ResizablePanel>
-            </ResizablePanelGroup>
+                    <ResizablePanel
+                        ref={listPanelRef}
+                        defaultSize={30}
+                        minSize={20}
+                        maxSize={40}
+                        collapsible={true}
+                        collapsedSize={4.5}
+                        onCollapse={() => editorPanelRef.current?.resize(100 - 4.5)}
+                        onExpand={() => editorPanelRef.current?.resize(70)}
+                        className="min-w-[200px]"
+                    >
+                        <NoteList
+                            onSelectNote={handleSelectNote}
+                            onCreateNewNote={handleCreateNewNote}
+                        />
+                    </ResizablePanel>
+                    <ResizableHandle withHandle />
+                    <ResizablePanel
+                        ref={editorPanelRef}
+                        defaultSize={70}
+                        minSize={30}
+                        className="min-w-[300px]"
+                    >
+                        {currentEditor}
+                    </ResizablePanel>
+                </ResizablePanelGroup>
+            </div>
         );
     }
 
     return (
         <div className="h-full flex flex-col">
+            {contextHeader}
             <NoteList
                 onSelectNote={handleSelectNote}
                 onCreateNewNote={handleCreateNewNote}
