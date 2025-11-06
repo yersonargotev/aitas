@@ -5,9 +5,11 @@ import {
   Forward,
   MoreHorizontal,
   PlusCircle,
+  StickyNote,
   Trash2,
 } from "lucide-react"
 
+import { ProjectNotesDialog } from "@/components/notes/project-notes-dialog"
 import { ProjectForm } from "@/components/projects/project-form"
 import { Button } from "@/components/ui/button"
 import {
@@ -31,12 +33,20 @@ import { useProjectStore } from "@/lib/stores/project-store"
 import { useTaskStore } from "@/lib/stores/task-store"
 import { cn } from "@/lib/utils"
 import { useRouter } from "next/navigation"
+import { useState } from "react"
 
 export function NavProjects() {
   const { isMobile, state } = useSidebar()
   const router = useRouter()
   const { projects, addProject, deleteProject, selectProject, selectedProjectId } = useProjectStore()
   const { setFilter } = useTaskStore()
+
+  // State for notes dialog
+  const [notesDialogOpen, setNotesDialogOpen] = useState(false)
+  const [selectedProjectForNotes, setSelectedProjectForNotes] = useState<{
+    id: string;
+    name: string;
+  } | null>(null)
 
   // Handle project creation
   const handleProjectCreate = (project: { name: string; description?: string; icon?: string }) => {
@@ -59,6 +69,12 @@ export function NavProjects() {
       // @ts-expect-error - we've extended the types but TypeScript doesn't recognize it yet
       setFilter("projectId", undefined)
     }
+  }
+
+  // Handle view notes
+  const handleViewNotes = (projectId: string, projectName: string) => {
+    setSelectedProjectForNotes({ id: projectId, name: projectName })
+    setNotesDialogOpen(true)
   }
 
   const isCollapsed = state === "collapsed"
@@ -133,6 +149,10 @@ export function NavProjects() {
                     <Folder className="text-muted-foreground" />
                     <span>View Project</span>
                   </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleViewNotes(project.id, project.name)}>
+                    <StickyNote className="text-muted-foreground" />
+                    <span>View Notes</span>
+                  </DropdownMenuItem>
                   <DropdownMenuItem>
                     <Forward className="text-muted-foreground" />
                     <span>Share Project</span>
@@ -158,6 +178,16 @@ export function NavProjects() {
           )}
         </SidebarMenu>
       </SidebarGroup>
+
+      {/* Project Notes Dialog */}
+      {selectedProjectForNotes && (
+        <ProjectNotesDialog
+          projectId={selectedProjectForNotes.id}
+          projectName={selectedProjectForNotes.name}
+          open={notesDialogOpen}
+          onOpenChange={setNotesDialogOpen}
+        />
+      )}
     </>
   )
 }
