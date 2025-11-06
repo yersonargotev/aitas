@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/resizable";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { useNotesStore } from "@/hooks/use-notes";
-import { PanelLeftClose, XIcon, Folder, StickyNote } from "lucide-react";
+import { PanelLeftClose, XIcon, Folder, StickyNote, Loader2 } from "lucide-react";
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import type { ImperativePanelHandle } from 'react-resizable-panels';
 
@@ -33,6 +33,8 @@ export function ProjectNotesView({ projectId, projectName }: ProjectNotesViewPro
     const clearNotes = useNotesStore((state) => state.clearNotes);
     const currentNoteId = useNotesStore((state) => state.currentNoteId);
     const currentProjectIdFromStore = useNotesStore((state) => state.currentProjectId); // Renombrado para evitar confusión con prop projectId
+    const isLoading = useNotesStore((state) => state.isLoading);
+    const error = useNotesStore((state) => state.error);
 
     const [editorMode, setEditorMode] = useState<"view" | "new" | null>(null);
 
@@ -153,7 +155,7 @@ export function ProjectNotesView({ projectId, projectName }: ProjectNotesViewPro
 
     if (isDesktop) {
         return (
-            <div className="flex flex-col h-full">
+            <div className="flex flex-col h-full relative">
                 {contextHeader}
                 <ResizablePanelGroup
                     direction="horizontal"
@@ -185,6 +187,19 @@ export function ProjectNotesView({ projectId, projectName }: ProjectNotesViewPro
                         {currentEditor}
                     </ResizablePanel>
                 </ResizablePanelGroup>
+                {isLoading && (
+                    <div className="absolute inset-0 bg-background/50 flex items-center justify-center z-50">
+                        <div className="flex items-center gap-2 text-sm">
+                            <Loader2 className="h-5 w-5 animate-spin" />
+                            <span>Loading notes...</span>
+                        </div>
+                    </div>
+                )}
+                {error && (
+                    <div className="absolute top-14 left-1/2 transform -translate-x-1/2 bg-destructive/10 border border-destructive text-destructive px-4 py-2 rounded-md z-50">
+                        <p className="text-sm font-medium">Error: {error}</p>
+                    </div>
+                )}
             </div>
         );
     }

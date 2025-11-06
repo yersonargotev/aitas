@@ -9,6 +9,20 @@ import type { Note } from "@/types/note";
 import { create } from "zustand";
 import { nanoid } from 'nanoid';
 
+/**
+ * Notes Store - Manages both standalone and project-specific notes
+ *
+ * Standalone notes: currentProjectId is undefined
+ * - Stored in localStorage under 'standalone_notes' key
+ * - Accessible from main dashboard Notes tab
+ *
+ * Project notes: currentProjectId is a valid project ID string
+ * - Stored in localStorage under 'project_notes_{projectId}' key
+ * - Accessible from project dropdown "View Notes" action
+ *
+ * The store maintains context through currentProjectId and loads
+ * appropriate notes when switching between contexts.
+ */
 interface NotesState {
 	notes: Note[];
 	currentNoteId: string | null;
