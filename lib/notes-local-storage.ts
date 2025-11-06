@@ -3,8 +3,6 @@ import { v4 as uuidv4 } from "uuid";
 
 const STANDALONE_NOTES_KEY = 'standalone_notes';
 
-const getStandaloneNotesKey = (): string => STANDALONE_NOTES_KEY;
-
 const getNotesKey = (projectId?: string): string => {
 	return projectId ? `project_notes_${projectId}` : STANDALONE_NOTES_KEY;
 };
@@ -148,6 +146,7 @@ export function migrateMainDashboardNotesToStandalone(): boolean {
 
 			// Remove projectId from old notes and merge
 			const migratedNotes = oldNotes.map(note => {
+				// eslint-disable-next-line @typescript-eslint/no-unused-vars
 				const { projectId, ...noteWithoutProjectId } = note;
 				return noteWithoutProjectId as Note;
 			});
@@ -158,6 +157,7 @@ export function migrateMainDashboardNotesToStandalone(): boolean {
 			// Simply move and clean projectId
 			const oldNotes: Note[] = JSON.parse(oldNotesJson);
 			const migratedNotes = oldNotes.map(note => {
+				// eslint-disable-next-line @typescript-eslint/no-unused-vars
 				const { projectId, ...noteWithoutProjectId } = note;
 				return noteWithoutProjectId as Note;
 			});

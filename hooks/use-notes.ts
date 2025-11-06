@@ -28,7 +28,7 @@ interface NotesState {
 	currentNoteId: string | null;
 	isLoading: boolean;
 	error: string | null;
-	currentProjectId: string | null | undefined; // Para saber de qué proyecto cargar/guardar
+	currentProjectId: string | undefined; // Para saber de qué proyecto cargar/guardar
 
 	loadNotes: (projectId?: string) => void;
 	loadStandaloneNotes: () => void;
@@ -183,7 +183,7 @@ export const useNotesStore = create<NotesState>((set, get) => ({
 		set({
 			notes: [],
 			currentNoteId: null,
-			currentProjectId: null,
+			currentProjectId: undefined,
 			error: null,
 		});
 	},
