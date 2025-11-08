@@ -57,7 +57,24 @@ export function NoteEditor({ noteId, onSave, onCancel }: NoteEditorProps) {
                 setIsImageStorageInitialized(false);
             }
         };
-        initStorage();
+
+        // Check if already initialized first (singleton pattern)
+        if (imageStorage.isInitialized()) {
+            setIsImageStorageInitialized(true);
+            setImageStorageError(null);
+        } else if (imageStorage.getInitializationStatus() === 'in-progress') {
+            // Storage initialization is already in progress, wait for it
+            imageStorage.init().then(() => {
+                setIsImageStorageInitialized(true);
+                setImageStorageError(null);
+            }).catch(err => {
+                console.error("Failed to initialize image storage:", err);
+                setImageStorageError(err instanceof Error ? err.message : "Unknown error initializing storage");
+                setIsImageStorageInitialized(false);
+            });
+        } else {
+            initStorage();
+        }
     }, []);
 
     // Effect for cleaning up blob URLs
@@ -111,6 +128,8 @@ export function NoteEditor({ noteId, onSave, onCancel }: NoteEditorProps) {
             setActiveBlobUrls(new Set());
             return;
         }
+
+        // Always start preview rendering immediately, regardless of storage initialization
         setIsPreviewLoading(true);
         setPreviewError(null);
 
@@ -119,29 +138,66 @@ export function NoteEditor({ noteId, onSave, onCancel }: NoteEditorProps) {
         const matches = Array.from(markdownContent.matchAll(imageRegex));
         const newlyCreatedBlobUrls = new Set<string>();
 
-        if (isImageStorageInitialized) {
-            const processingPromises = matches.map(async (match) => {
-                const imageId = match[1];
-                try {
-                    const record = await imageStorage.getImageById(imageId);
-                    if (record && record.file) {
-                        const blobUrl = imageStorage.createImageUrl(record.file);
-                        newlyCreatedBlobUrls.add(blobUrl);
-                        // Replace in contentWithBlobUrls. Need to be careful with regex replacement.
-                        // Using a simple string replace for the full match should be safe here.
-                        contentWithBlobUrls = contentWithBlobUrls.replace(match[0], `![${match[0].substring(2, match[0].indexOf(']'))}](${blobUrl})`);
-                    } else {
-                        contentWithBlobUrls = contentWithBlobUrls.replace(match[0], `![Image not found: ${imageId}](missing-image-placeholder)`);
-                    }
-                } catch (error) {
-                    console.error(`Error processing image ${imageId} for preview:`, error);
-                    contentWithBlobUrls = contentWithBlobUrls.replace(match[0], `![Error loading image: ${imageId}](error-loading-image)`);
+        if (matches.length === 0) {
+            // No images to process, render immediately
+            try {
+                const result = await renderMarkdownPreviewAction(contentWithBlobUrls);
+                if ('html' in result) {
+                    setPreviewHtml(result.html);
+                } else {
+                    setPreviewHtml('');
+                    setPreviewError(result.error + (result.details ? `: ${result.details}` : ''));
                 }
-            });
-            await Promise.all(processingPromises);
+            } catch (e) {
+                setPreviewHtml('');
+                setPreviewError('An unexpected error occurred while rendering preview.');
+                console.error("Unexpected preview error:", e);
+            } finally {
+                setIsPreviewLoading(false);
+            }
+            return;
+        }
+
+        // Extract image IDs from matches
+        const imageIds = matches.map(match => match[1]);
+
+        if (imageStorage.isInitialized()) {
+            // Storage is ready, use batch processing with caching
+            try {
+                const imageResults = await imageStorage.getImagesByIds(imageIds);
+                const processingPromises = matches.map(async (match) => {
+                    const imageId = match[1];
+                    const record = imageResults.get(imageId);
+
+                    if (record && record.file) {
+                        // Check if we have a cached blob URL
+                        const cachedUrl = imageStorage.getCachedImageUrl(imageId);
+                        if (cachedUrl) {
+                            newlyCreatedBlobUrls.add(cachedUrl);
+                            contentWithBlobUrls = contentWithBlobUrls.replace(match[0],
+                                `![${match[0].substring(2, match[0].indexOf(']'))}](${cachedUrl})`);
+                        } else {
+                            const blobUrl = imageStorage.createImageUrl(record.file);
+                            newlyCreatedBlobUrls.add(blobUrl);
+                            contentWithBlobUrls = contentWithBlobUrls.replace(match[0],
+                                `![${match[0].substring(2, match[0].indexOf(']'))}](${blobUrl})`);
+                        }
+                    } else {
+                        contentWithBlobUrls = contentWithBlobUrls.replace(match[0],
+                            `![Image not found: ${imageId}](missing-image-placeholder)`);
+                    }
+                });
+                await Promise.all(processingPromises);
+            } catch (error) {
+                console.error("Error processing images in batch:", error);
+                // Fallback to placeholder images
+                contentWithBlobUrls = markdownContent.replace(imageRegex,
+                    `![Loading image...](placeholder-image)`);
+            }
         } else {
-            // If image storage is not ready, replace all indexeddb links with a message
-            contentWithBlobUrls = markdownContent.replace(imageRegex, `![Image storage not ready](image-storage-not-ready)`);
+            // Storage not yet initialized, show loading placeholders but still render preview
+            contentWithBlobUrls = markdownContent.replace(imageRegex,
+                `![Loading image...](${imageStorage.getInitializationStatus() === 'in-progress' ? 'image-loading' : 'image-initializing'})`);
         }
 
         // Manage blob URLs: revoke old ones not in the new set, then update active set
@@ -156,6 +212,18 @@ export function NoteEditor({ noteId, onSave, onCancel }: NoteEditorProps) {
             const result = await renderMarkdownPreviewAction(contentWithBlobUrls);
             if ('html' in result) {
                 setPreviewHtml(result.html);
+
+                // If storage was not initialized but we rendered preview, try to load images asynchronously
+                if (!imageStorage.isInitialized() && imageIds.length > 0) {
+                    imageStorage.init().then(() => {
+                        // Trigger a re-render with actual images once storage is ready
+                        if (currentTab === 'preview') {
+                            debouncedRenderPreview(markdownContent);
+                        }
+                    }).catch(error => {
+                        console.error("Failed to initialize storage for async image loading:", error);
+                    });
+                }
             } else {
                 setPreviewHtml('');
                 setPreviewError(result.error + (result.details ? `: ${result.details}` : ''));
@@ -195,19 +263,13 @@ export function NoteEditor({ noteId, onSave, onCancel }: NoteEditorProps) {
 
     useEffect(() => {
         if (currentTab === 'preview') {
-            if (isImageStorageInitialized) {
-                debouncedRenderPreview(content);
-            } else {
-                // Image storage is not ready yet, show an initializing message
-                setPreviewHtml('');
-                setPreviewError('Image storage is initializing...');
-                setIsPreviewLoading(true);
-            }
+            // Always render preview immediately, regardless of storage initialization
+            debouncedRenderPreview(content);
         }
         return () => {
             debouncedRenderPreview.cancel();
         };
-    }, [content, currentTab, debouncedRenderPreview, isImageStorageInitialized]); // Added isImageStorageInitialized
+    }, [content, currentTab, debouncedRenderPreview]); // Removed isImageStorageInitialized dependency
 
     // Removed - preview preference is now saved directly in button onClick handlers
 

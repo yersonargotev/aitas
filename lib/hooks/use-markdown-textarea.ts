@@ -22,7 +22,7 @@ export function useMarkdownTextarea({
 	const textareaRef = useRef<HTMLTextAreaElement>(null);
 	const { addImageToTask } = useTaskStore();
 
-	// Initialize image storage
+	// Initialize image storage using singleton pattern
 	useEffect(() => {
 		const initStorage = async () => {
 			try {
@@ -32,7 +32,13 @@ export function useMarkdownTextarea({
 				console.error("Failed to initialize image storage:", error);
 			}
 		};
-		initStorage();
+
+		// Check if already initialized first
+		if (imageStorage.isInitialized()) {
+			setIsStorageReady(true);
+		} else {
+			initStorage();
+		}
 	}, []);
 
 	const insertAtCursor = useCallback(
