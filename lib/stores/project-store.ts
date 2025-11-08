@@ -10,6 +10,7 @@ interface ProjectState {
 	selectedProjectId: string | null;
 	isLoading: boolean;
 	error: string | null;
+	projectTabStates: Record<string, string>; // projectId -> tab value
 }
 
 interface ProjectActions {
@@ -26,6 +27,9 @@ interface ProjectActions {
 	// Project selection
 	selectProject: (projectId: string | null) => void;
 
+	// Tab state management
+	setProjectTab: (projectId: string, tab: string) => void;
+
 	// State management
 	setError: (error: string | null) => void;
 	clearError: () => void;
@@ -37,6 +41,7 @@ const initialState: ProjectState = {
 	selectedProjectId: null,
 	isLoading: false,
 	error: null,
+	projectTabStates: {},
 };
 
 // Create the store with persist middleware
@@ -92,12 +97,18 @@ export const useProjectStore = create<ProjectState & ProjectActions>()(
 						const filteredProjects = state.projects.filter(
 							(project) => project.id !== projectId,
 						);
+						// Also remove the tab state for the deleted project
+						const remainingTabStates = Object.fromEntries(
+							Object.entries(state.projectTabStates).filter(([key]) => key !== projectId)
+						);
+
 						return {
 							projects: filteredProjects,
 							selectedProjectId:
 								state.selectedProjectId === projectId
 									? null
 									: state.selectedProjectId,
+							projectTabStates: remainingTabStates,
 							error: null,
 						};
 					});
@@ -112,6 +123,16 @@ export const useProjectStore = create<ProjectState & ProjectActions>()(
 				set({ selectedProjectId: projectId });
 			},
 
+			// Tab state management
+			setProjectTab: (projectId, tab) => {
+				set((state) => ({
+					projectTabStates: {
+						...state.projectTabStates,
+						[projectId]: tab,
+					},
+				}));
+			},
+
 			// State management
 			setError: (error) => set({ error }),
 			clearError: () => set({ error: null }),
@@ -123,6 +144,7 @@ export const useProjectStore = create<ProjectState & ProjectActions>()(
 			partialize: (state) => ({
 				projects: state.projects,
 				selectedProjectId: state.selectedProjectId,
+				projectTabStates: state.projectTabStates,
 			}),
 			// Handle errors during storage operations
 			onRehydrateStorage: () => (state) => {
@@ -148,3 +170,11 @@ export const useProjectStore = create<ProjectState & ProjectActions>()(
 		},
 	),
 );
+
+// Selector function for getting project tab with fallback
+export const useProjectTab = (projectId: string | null) => {
+	return useProjectStore((state) => {
+		if (!projectId) return "tasks"; // Default tab when no project selected
+		return state.projectTabStates[projectId] || "tasks"; // Default to "tasks" tab
+	});
+};

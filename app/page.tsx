@@ -15,17 +15,13 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
-import { useProjectStore } from "@/lib/stores/project-store";
+import { useProjectStore, useProjectTab } from "@/lib/stores/project-store";
 import { useQueryState } from "nuqs";
-import { Suspense, useMemo } from "react";
+import { Suspense, useMemo, useEffect } from "react";
 
 // Component that uses useQueryState - needs to be wrapped in Suspense
 function MainContent() {
-  const [activeTab, setActiveTab] = useQueryState("tab", {
-    defaultValue: "tasks",
-  });
-
-  const { projects, selectedProjectId } = useProjectStore();
+  const { projects, selectedProjectId, setProjectTab } = useProjectStore();
 
   const activeProject = useMemo(() => {
     if (selectedProjectId) {
@@ -34,11 +30,38 @@ function MainContent() {
     return projects[0];
   }, [projects, selectedProjectId]);
 
+  // Use project-specific tab state, fallback to URL state for no-project scenario
+  const projectTab = useProjectTab(activeProject?.id || null);
+  const [urlTab, setUrlTab] = useQueryState("tab", {
+    defaultValue: "tasks",
+  });
+
+  // Determine active tab: use project tab if project is selected, otherwise URL tab
+  const activeTab = activeProject ? projectTab : urlTab;
+
+  // Handle tab changes
+  const handleTabChange = (newTab: string) => {
+    if (activeProject) {
+      // Save to project store when project is selected
+      setProjectTab(activeProject.id, newTab);
+    } else {
+      // Use URL state when no project is selected
+      setUrlTab(newTab);
+    }
+  };
+
+  // Sync URL with project tab when no project is selected
+  useEffect(() => {
+    if (!activeProject && urlTab !== projectTab) {
+      setUrlTab(projectTab);
+    }
+  }, [activeProject, urlTab, projectTab, setUrlTab]);
+
   return (
     <div className="container mx-auto flex flex-1 flex-col px-4 py-8">
       <Header showSidebarTrigger={true} />
       <div className="mt-6 flex flex-1 flex-col overflow-hidden">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-1 flex-col">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="flex flex-1 flex-col">
           <TabsList className="mb-2 sm:mb-4 sticky top-0 z-10 bg-background/95 backdrop-blur-sm px-0 sm:px-1 py-1.5 h-auto self-start">
             <TabsTrigger value="dashboard" className="text-xs sm:text-sm px-2.5 sm:px-3 py-1 sm:py-1.5">Dashboard</TabsTrigger>
             <TabsTrigger value="tasks" className="text-xs sm:text-sm px-2.5 sm:px-3 py-1 sm:py-1.5">Tasks</TabsTrigger>
