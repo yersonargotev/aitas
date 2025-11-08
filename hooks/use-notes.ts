@@ -10,11 +10,7 @@ import { create } from "zustand";
 import { nanoid } from 'nanoid';
 
 /**
- * Notes Store - Manages both standalone and project-specific notes
- *
- * Standalone notes: currentProjectId is undefined
- * - Stored in localStorage under 'standalone_notes' key
- * - Accessible from main dashboard Notes tab
+ * Notes Store - Manages project-specific notes
  *
  * Project notes: currentProjectId is a valid project ID string
  * - Stored in localStorage under 'project_notes_{projectId}' key
@@ -28,10 +24,9 @@ interface NotesState {
 	currentNoteId: string | null;
 	isLoading: boolean;
 	error: string | null;
-	currentProjectId: string | undefined; // Para saber de qué proyecto cargar/guardar
+	currentProjectId: string | undefined; // To know which project to load/save from
 
 	loadNotes: (projectId?: string) => void;
-	loadStandaloneNotes: () => void;
 	addNote: (title: string, content: string, tempImageParentId?: string) => Promise<Note | null>;
 	updateNote: (
 		noteId: string,
@@ -53,6 +48,10 @@ export const useNotesStore = create<NotesState>((set, get) => ({
 
 	loadNotes: (projectId) => {
 		set({ isLoading: true, error: null, currentProjectId: projectId });
+		if (!projectId) {
+			set({ notes: [], isLoading: false });
+			return;
+		}
 		try {
 			const notesFromStorage = getNotesFromStorage(projectId);
 			set({ notes: notesFromStorage, isLoading: false });
@@ -63,12 +62,8 @@ export const useNotesStore = create<NotesState>((set, get) => ({
 		}
 	},
 
-	loadStandaloneNotes: () => {
-		get().loadNotes(undefined);
-	},
-
 	addNote: async (title, content, tempImageParentId?: string) => {
-		const projectId = get().currentProjectId; // Can be undefined for standalone notes
+		const projectId = get().currentProjectId;
 		set({ isLoading: true, error: null });
 		try {
 			const noteId = nanoid();
@@ -79,7 +74,7 @@ export const useNotesStore = create<NotesState>((set, get) => ({
 				content,
 				createdAt: now,
 				updatedAt: now,
-				projectId, // Will be undefined for standalone notes
+				projectId,
 			};
 
 			if (tempImageParentId) {
@@ -95,15 +90,13 @@ export const useNotesStore = create<NotesState>((set, get) => ({
 				}
 			}
 
-			// Assuming saveNoteToStorage can take a full Note object or specific fields including the generated id.
-			// It needs to merge projectId and the generated id.
 			const newNote = saveNoteToStorage({ ...newNoteData, id: noteId });
 
 
 			set((state) => ({
 				notes: [...state.notes, newNote],
 				isLoading: false,
-				currentNoteId: newNote.id, // Opcional: seleccionar la nueva nota
+				currentNoteId: newNote.id,
 			}));
 			return newNote;
 		} catch (e) {
@@ -115,19 +108,19 @@ export const useNotesStore = create<NotesState>((set, get) => ({
 	},
 
 	updateNote: async (noteId, title, content) => {
-		const projectId = get().currentProjectId; // Can be undefined
+		const projectId = get().currentProjectId;
 		set({ isLoading: true, error: null });
 		try {
 			const updatedNote = saveNoteToStorage({
 				id: noteId,
-				projectId, // Can be undefined
+				projectId,
 				title,
 				content,
 			});
 			set((state) => ({
 				notes: state.notes.map((n) => (n.id === noteId ? updatedNote : n)),
 				isLoading: false,
-				currentNoteId: updatedNote.id, // Opcional: mantener seleccionada la nota
+				currentNoteId: updatedNote.id,
 			}));
 			return updatedNote;
 		} catch (e) {
@@ -139,7 +132,13 @@ export const useNotesStore = create<NotesState>((set, get) => ({
 	},
 
 	deleteNote: async (noteId) => {
-		const projectId = get().currentProjectId; // Can be undefined
+		const projectId = get().currentProjectId;
+		if (!projectId) {
+			const error = "Project ID not set, cannot delete note.";
+			set({ error, isLoading: false });
+			console.error(error);
+			return;
+		}
 		set({ isLoading: true, error: null });
 		try {
 			deleteNoteFromStorage(noteId, projectId); // This is synchronous
@@ -150,15 +149,13 @@ export const useNotesStore = create<NotesState>((set, get) => ({
 			} catch (imageError) {
 				// Log the error but don't let it block note deletion workflow
 				console.error(`Failed to delete images for note ${noteId}:`, imageError);
-				// Optionally, set a specific error state related to image deletion if needed
-				// For now, we just log it and proceed with note deletion from state.
 			}
 
 			set((state) => ({
 				notes: state.notes.filter((n) => n.id !== noteId),
 				isLoading: false,
 				currentNoteId:
-					state.currentNoteId === noteId ? null : state.currentNoteId, // Deseleccionar si era la actual
+					state.currentNoteId === noteId ? null : state.currentNoteId,
 			}));
 		} catch (e) {
 			const error = e instanceof Error ? e.message : "Failed to delete note";
@@ -172,10 +169,10 @@ export const useNotesStore = create<NotesState>((set, get) => ({
 	},
 
 	getNoteById: (noteId: string) => {
-		const projectId = get().currentProjectId; // Can be undefined
-		// Primero intenta desde el store para rapidez, luego desde localStorage como fallback
+		const projectId = get().currentProjectId;
 		const noteFromStore = get().notes.find((note) => note.id === noteId);
 		if (noteFromStore) return noteFromStore;
+		if (!projectId) return undefined;
 		return getNoteFromStorage(noteId, projectId);
 	},
 
