@@ -22,7 +22,6 @@ interface NoteEditorProps {
 export function NoteEditor({ noteId, onSave, onCancel }: NoteEditorProps) {
     const [title, setTitle] = useState('');
     const [content, setContent] = useState('');
-    const [currentTab, setCurrentTab] = useState<'edit' | 'preview'>('edit');
     const [previewHtml, setPreviewHtml] = useState('');
     const [isPreviewLoading, setIsPreviewLoading] = useState(false);
     const [previewError, setPreviewError] = useState<string | null>(null);
@@ -30,9 +29,11 @@ export function NoteEditor({ noteId, onSave, onCancel }: NoteEditorProps) {
     const [imageStorageError, setImageStorageError] = useState<string | null>(null);
     const [pasteError, setPasteError] = useState<string | null>(null);
     const [activeBlobUrls, setActiveBlobUrls] = useState<Set<string>>(new Set());
-    const [tempNoteIdForImages, setTempNoteIdForImages] = useState(() => !noteId ? nanoid() : null);
+    const { addNote, updateNote, getNoteById, currentProjectId, previewPreference, setPreviewPreference, isLoading, error } = useNotesStore();
 
-    const { addNote, updateNote, getNoteById, currentProjectId, isLoading, error } = useNotesStore();
+    const currentTab = previewPreference ? 'preview' : 'edit'; // Derived state
+
+    const [tempNoteIdForImages, setTempNoteIdForImages] = useState(() => !noteId ? nanoid() : null);
 
     useEffect(() => {
         if (!noteId) { // If it's a new note (no noteId yet)
@@ -41,6 +42,8 @@ export function NoteEditor({ noteId, onSave, onCancel }: NoteEditorProps) {
             setTempNoteIdForImages(null);
         }
     }, [noteId]);
+
+  // Removed - currentTab is now derived from previewPreference
 
     useEffect(() => {
         const initStorage = async () => {
@@ -206,6 +209,8 @@ export function NoteEditor({ noteId, onSave, onCancel }: NoteEditorProps) {
         };
     }, [content, currentTab, debouncedRenderPreview, isImageStorageInitialized]); // Added isImageStorageInitialized
 
+    // Removed - preview preference is now saved directly in button onClick handlers
+
     const handleSave = async () => {
         if (!currentProjectId) {
             console.error('Project ID not set, cannot save note.');
@@ -228,7 +233,7 @@ export function NoteEditor({ noteId, onSave, onCancel }: NoteEditorProps) {
             setTitle('');
             setContent('');
             setPreviewHtml('');
-            setCurrentTab('edit');
+            setPreviewPreference(false); // Reset to edit view
         }
     };
 
@@ -239,7 +244,7 @@ export function NoteEditor({ noteId, onSave, onCancel }: NoteEditorProps) {
             setTitle('');
             setContent('');
             setPreviewHtml('');
-            setCurrentTab('edit');
+            setPreviewPreference(false); // Reset to edit view
         }
     };
 
@@ -253,8 +258,8 @@ export function NoteEditor({ noteId, onSave, onCancel }: NoteEditorProps) {
                 disabled={isLoading}
             />
             <div className="mb-2 flex gap-1 border-b pb-1">
-                <Button variant={currentTab === 'edit' ? 'secondary' : 'ghost'} size="sm" onClick={() => setCurrentTab('edit')}>Edit</Button>
-                <Button variant={currentTab === 'preview' ? 'secondary' : 'ghost'} size="sm" onClick={() => setCurrentTab('preview')}>Preview</Button>
+                <Button variant={currentTab === 'edit' ? 'secondary' : 'ghost'} size="sm" onClick={() => setPreviewPreference(false)}>Edit</Button>
+                <Button variant={currentTab === 'preview' ? 'secondary' : 'ghost'} size="sm" onClick={() => setPreviewPreference(true)}>Preview</Button>
             </div>
 
             <ScrollArea className="flex-1 mb-2 min-h-[200px]">

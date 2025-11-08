@@ -3,6 +3,10 @@ import {
 	getNoteFromStorage,
 	getNotesFromStorage,
 	saveNoteToStorage,
+	getLastOpenedNote,
+	setLastOpenedNote,
+	getPreviewPreference,
+	setPreviewPreference,
 } from "@/lib/notes-local-storage";
 import { imageStorage } from "@/lib/stores/image-storage";
 import type { Note } from "@/types/note";
@@ -25,6 +29,7 @@ interface NotesState {
 	isLoading: boolean;
 	error: string | null;
 	currentProjectId: string | undefined; // To know which project to load/save from
+	previewPreference: boolean; // Whether user prefers preview view
 
 	loadNotes: (projectId?: string) => void;
 	addNote: (title: string, content: string, tempImageParentId?: string) => Promise<Note | null>;
@@ -35,8 +40,11 @@ interface NotesState {
 	) => Promise<Note | null>;
 	deleteNote: (noteId: string) => Promise<void>;
 	selectNote: (noteId: string | null) => void;
+	selectNoteAndPersist: (noteId: string) => void;
 	getNoteById: (noteId: string) => Note | undefined;
 	clearNotes: () => void;
+	setPreviewPreference: (preferPreview: boolean) => void;
+	restoreLastOpenedNote: () => void;
 }
 
 export const useNotesStore = create<NotesState>((set, get) => ({
@@ -45,19 +53,21 @@ export const useNotesStore = create<NotesState>((set, get) => ({
 	isLoading: false,
 	error: null,
 	currentProjectId: undefined,
+	previewPreference: false,
 
 	loadNotes: (projectId) => {
 		set({ isLoading: true, error: null, currentProjectId: projectId });
 		if (!projectId) {
-			set({ notes: [], isLoading: false });
+			set({ notes: [], isLoading: false, previewPreference: false });
 			return;
 		}
 		try {
 			const notesFromStorage = getNotesFromStorage(projectId);
-			set({ notes: notesFromStorage, isLoading: false });
+			const previewPref = getPreviewPreference(projectId);
+			set({ notes: notesFromStorage, isLoading: false, previewPreference: previewPref });
 		} catch (e) {
 			const error = e instanceof Error ? e.message : "Failed to load notes";
-			set({ error, isLoading: false });
+			set({ error, isLoading: false, previewPreference: false });
 			console.error(error);
 		}
 	},
@@ -168,6 +178,15 @@ export const useNotesStore = create<NotesState>((set, get) => ({
 		set({ currentNoteId: noteId, error: null });
 	},
 
+	selectNoteAndPersist: (noteId) => {
+		const projectId = get().currentProjectId;
+		set({ currentNoteId: noteId, error: null });
+		// Save the last opened note for this project
+		if (projectId && noteId) {
+			setLastOpenedNote(projectId, noteId);
+		}
+	},
+
 	getNoteById: (noteId: string) => {
 		const projectId = get().currentProjectId;
 		const noteFromStore = get().notes.find((note) => note.id === noteId);
@@ -182,6 +201,38 @@ export const useNotesStore = create<NotesState>((set, get) => ({
 			currentNoteId: null,
 			currentProjectId: undefined,
 			error: null,
+			previewPreference: false,
 		});
+	},
+
+	setPreviewPreference: (preferPreview: boolean) => {
+		const projectId = get().currentProjectId;
+		set({ previewPreference: preferPreview });
+		// Save the preview preference for this project
+		if (projectId) {
+			setPreviewPreference(projectId, preferPreview);
+		}
+	},
+
+	restoreLastOpenedNote: () => {
+		const projectId = get().currentProjectId;
+		const { notes } = get();
+		if (!projectId || notes.length === 0) return;
+
+		const lastOpenedNoteId = getLastOpenedNote(projectId);
+		if (lastOpenedNoteId) {
+			// Check if the last opened note still exists
+			const noteExists = notes.find(note => note.id === lastOpenedNoteId);
+			if (noteExists) {
+				get().selectNote(lastOpenedNoteId);
+				return;
+			}
+		}
+
+		// If no last opened note or it doesn't exist, select the first note
+		const firstNote = notes[0];
+		if (firstNote) {
+			get().selectNote(firstNote.id);
+		}
 	},
 }));

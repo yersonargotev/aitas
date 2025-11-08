@@ -114,3 +114,52 @@ export function deleteNoteFromStorage(noteId: string, projectId: string): void {
 		console.error("Error deleting note from localStorage:", error);
 	}
 }
+
+// Helper functions for persisting last opened note and preview preference
+const getLastOpenedNoteKey = (projectId: string): string => {
+	return `last_opened_note_${projectId}`;
+};
+
+const getPreviewPreferenceKey = (projectId: string): string => {
+	return `preview_preference_${projectId}`;
+};
+
+export function getLastOpenedNote(projectId: string): string | null {
+	if (typeof window === "undefined") return null;
+	try {
+		const lastNoteId = localStorage.getItem(getLastOpenedNoteKey(projectId));
+		return lastNoteId;
+	} catch (error) {
+		console.error("Error reading last opened note from localStorage:", error);
+		return null;
+	}
+}
+
+export function setLastOpenedNote(projectId: string, noteId: string): void {
+	if (typeof window === "undefined") return;
+	try {
+		localStorage.setItem(getLastOpenedNoteKey(projectId), noteId);
+	} catch (error) {
+		console.error("Error saving last opened note to localStorage:", error);
+	}
+}
+
+export function getPreviewPreference(projectId: string): boolean {
+	if (typeof window === "undefined") return false; // Default to edit view
+	try {
+		const preference = localStorage.getItem(getPreviewPreferenceKey(projectId));
+		return preference === 'true';
+	} catch (error) {
+		console.error("Error reading preview preference from localStorage:", error);
+		return false;
+	}
+}
+
+export function setPreviewPreference(projectId: string, preferPreview: boolean): void {
+	if (typeof window === "undefined") return;
+	try {
+		localStorage.setItem(getPreviewPreferenceKey(projectId), preferPreview.toString());
+	} catch (error) {
+		console.error("Error saving preview preference to localStorage:", error);
+	}
+}

@@ -31,12 +31,15 @@ export function ProjectNotesView({ projectId, projectName }: ProjectNotesViewPro
     const loadNotes = useNotesStore((state) => state.loadNotes);
     const selectNote = useNotesStore((state) => state.selectNote);
     const clearNotes = useNotesStore((state) => state.clearNotes);
+    const selectNoteAndPersist = useNotesStore((state) => state.selectNoteAndPersist);
+    const restoreLastOpenedNote = useNotesStore((state) => state.restoreLastOpenedNote);
     const currentNoteId = useNotesStore((state) => state.currentNoteId);
     const currentProjectIdFromStore = useNotesStore((state) => state.currentProjectId); // Renombrado para evitar confusión con prop projectId
     const isLoading = useNotesStore((state) => state.isLoading);
     const error = useNotesStore((state) => state.error);
 
     const [editorMode, setEditorMode] = useState<"view" | "new" | null>(null);
+    const [hasRestoredState, setHasRestoredState] = useState(false);
 
     const isDesktop = useMediaQuery("(min-width: 768px)");
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -48,8 +51,15 @@ export function ProjectNotesView({ projectId, projectName }: ProjectNotesViewPro
         // Always load notes for the given projectId (can be undefined for standalone)
         if (projectId !== currentProjectIdFromStore) {
             loadNotes(projectId);
+            setHasRestoredState(false); // Reset restored state when project changes
         }
-    }, [projectId, loadNotes, currentProjectIdFromStore]);
+
+        // Restore last opened note when notes are loaded and not yet restored
+        if (!isLoading && projectId === currentProjectIdFromStore && !hasRestoredState) {
+            restoreLastOpenedNote();
+            setHasRestoredState(true);
+        }
+    }, [projectId, loadNotes, currentProjectIdFromStore, isLoading, hasRestoredState, restoreLastOpenedNote]);
 
     useEffect(() => {
         return () => {
@@ -87,8 +97,8 @@ export function ProjectNotesView({ projectId, projectName }: ProjectNotesViewPro
     }, [currentNoteId, isDesktop, editorMode, isDrawerOpen]); // Added isDrawerOpen to dependencies
 
     const handleSelectNote = useCallback((noteId: string) => {
-        selectNote(noteId);
-    }, [selectNote]);
+        selectNoteAndPersist(noteId);
+    }, [selectNoteAndPersist]);
 
     const handleCreateNewNote = useCallback(() => {
         selectNote(null);
