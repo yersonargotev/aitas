@@ -1,15 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-	experimental: {
-		ppr: true,
-		reactCompiler: true,
-	},
-	compiler: {
-		removeConsole: {
-			exclude: ["error"],
-		},
-	},
+	cacheComponents: true, // Migrated from PPR to Cache Components
+	reactCompiler: true,
 };
 
 export default nextConfig;
