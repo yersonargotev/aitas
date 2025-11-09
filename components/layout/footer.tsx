@@ -1,6 +1,8 @@
+"use cache";
+
 import Link from "next/link";
 
-export function Footer() {
+export async function Footer() {
     return (
         <footer className="border-t py-6">
             <div className="container mx-auto px-4">
