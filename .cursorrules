@@ -32,36 +32,40 @@ Performance Optimization
   - Optimize images: use WebP format, include size data, implement lazy loading.
 
 Next.js Specifics
-  - Use next-safe-action for all server actions:
-  - Implement type-safe server actions with proper validation.
-  - Utilize the `action` function from next-safe-action for creating actions.
-  - Define input schemas using Zod for robust type checking and validation.
-  - Handle errors gracefully and return appropriate responses.
-  - Use import type { ActionResponse } from '@/types/actions'
-  - Ensure all server actions return the ActionResponse type
-  - Implement consistent error handling and success responses using ActionResponse
+  - Use direct server actions with "use server" directive:
+  - Implement server-side functions with proper TypeScript typing.
+  - Define input parameters with explicit types for type safety.
+  - Handle errors gracefully and return appropriate response objects.
+  - Use try-catch blocks for error handling.
+  - Return consistent response objects with success/error status.
   - Example:
     ```typescript
     'use server'
 
-    import { createSafeActionClient } from 'next-safe-action'
     import { z } from 'zod'
-    import type { ActionResponse } from '@/app/actions/actions'
 
-    const schema = z.object({
-      value: z.string()
+    // Input validation schema (optional but recommended)
+    const noteSchema = z.object({
+      title: z.string().min(1),
+      content: z.string()
     })
 
-    export const someAction = createSafeActionClient()
-      .schema(schema)
-      .action(async (input): Promise<ActionResponse> => {
-        try {
-          // Action logic here
-          return { success: true, data: /* result */ }
-        } catch (error) {
-          return { success: false, error: error instanceof AppError ? error : appErrors.UNEXPECTED_ERROR, }
+    export async function createNoteAction(input: z.infer<typeof noteSchema>) {
+      try {
+        const validated = noteSchema.parse(input)
+
+        // Action logic here
+        const result = await saveNoteToDatabase(validated)
+
+        return { success: true, data: result }
+      } catch (error) {
+        console.error('Error creating note:', error)
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : 'Unknown error'
         }
-      })
+      }
+    }
     ```
   - Use useQueryState for all query state management.
   - Example:
