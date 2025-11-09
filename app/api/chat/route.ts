@@ -42,7 +42,7 @@ export async function POST(req: Request) {
 
 		console.log("Sending prompt to AI:", prompt);
 
-		// Call the AI model with generateObject
+		// Call the AI model with generateObject (AI SDK v5)
 		const result = await generateObject({
 			model: openai("gpt-4o"),
 			system:
